@@ -1,4 +1,4 @@
-import { useState, useRef, Suspense } from 'react';
+import { useState, useRef, Suspense, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Stage, useGLTF, Html } from '@react-three/drei';
 import { Map, Building, Users, FileText, Calendar, Phone, Info, Home, AlertTriangle } from 'lucide-react';
@@ -6,102 +6,246 @@ import { useKiosk } from '@/context/KioskContext';
 import ErrorBoundary from './ErrorBoundary';
 import * as THREE from 'three';
 
+// Preload all 3D models
+useGLTF.preload('/models/first_floor.glb');
+useGLTF.preload('/models/second_floor.glb');
+useGLTF.preload('/models/attic.glb');
+useGLTF.preload('/models/basement.glb');
+
 // Floor data for City Hall
 const floors = [
-  { id: 'first', name: 'FIRST FLOOR', model: '/models/first_floor.glb', description: 'Public Services & Reception' },
-  { id: 'second', name: 'SECOND FLOOR', model: '/models/second_floor.glb', description: 'City Council & Chambers' },
-  { id: 'third', name: 'THIRD FLOOR', model: '/models/attic.glb', description: 'Administrative Offices' },
-  { id: 'basement', name: 'BASEMENT', model: '/models/basement.glb', description: 'Parking & Facilities' },
+  {
+    id: 'first',
+    name: 'FIRST FLOOR',
+    model: '/models/first_floor.glb',
+    description: 'Public Services & Reception',
+    offset: [0, 0, 0],
+  },
+  {
+    id: 'second',
+    name: 'SECOND FLOOR',
+    model: '/models/second_floor.glb',
+    description: 'City Council & Chambers',
+    offset: [0, 0, 0],
+  },
+  {
+    id: 'third',
+    name: 'THIRD FLOOR',
+    model: '/models/attic.glb',
+    description: 'Administrative Offices',
+    offset: [0, 0, 0],
+  },
+  {
+    id: 'basement',
+    name: 'BASEMENT',
+    model: '/models/basement.glb',
+    description: 'Parking & Facilities',
+    offset: [0, 0, 0],
+  },
 ];
 
+// Loading fallback component with minimum 2-second delay
+function LoadingFallback() {
+  const [showLoading, setShowLoading] = useState(true);
+  const startTime = useRef(Date.now());
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const elapsed = Date.now() - startTime.current;
+      const remainingTime = Math.max(0, 2000 - elapsed);
+      
+      setTimeout(() => {
+        setShowLoading(false);
+      }, remainingTime);
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (!showLoading) return null;
+
+  return (
+    <Html center>
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+    </Html>
+  );
+}
+
 // 3D Model Component with proper material handling and centering
-function Model({ url }: { url: string }) {
+function Model({
+  url,
+  offset = [0, 0, 0],
+  onSelectOffice,
+  onLoadMarkers,
+}: {
+  url: string;
+  offset?: [number, number, number];
+  onSelectOffice?: (name: string, position: THREE.Vector3) => void;
+  onLoadMarkers?: (
+    markers: { 
+      name: string; 
+      position: THREE.Vector3;
+      size: THREE.Vector3;
+      center: THREE.Vector3;
+    }[]
+  ) => void;
+}) {
   const { scene } = useGLTF(url);
-  
-  // Ensure proper material rendering - dark base, highly visible structures
-  scene.traverse((child: THREE.Object3D) => {
+  const handleClick = (event: any) => {
+    event.stopPropagation();
+    const clickedObject = event.object;
+    console.log('Direct mesh click:', clickedObject.name);
+    
+    const box = new THREE.Box3().setFromObject(clickedObject);
+    const center = new THREE.Vector3();
+    box.getCenter(center);
+
+    const popupPosition = new THREE.Vector3(
+      center.x,
+      box.max.y + 0.8,
+      center.z
+    );
+
+    onSelectOffice?.(clickedObject.name, popupPosition);
+  };
+
+  const clonedScene = scene.clone(true);
+
+  clonedScene.traverse((child: THREE.Object3D) => {
     if (child instanceof THREE.Mesh) {
       child.castShadow = true;
       child.receiveShadow = true;
-      if (child.material) {
-        child.material.needsUpdate = true;
-        
-        // Check if this is the floor/base vs structure based on object name
-        const objectName = child.name.toLowerCase();
-        const isFloorBase = objectName.includes('floor') || 
-                           objectName.includes('base') || 
-                           objectName.includes('ground') ||
-                           objectName.includes('plane') ||
-                           objectName.includes('slab') ||
-                           objectName.includes('surface') ||
-                           objectName.includes('terrain');
-        
-        if (isFloorBase) {
-          // Make floor/base solid dark
-          if (Array.isArray(child.material)) {
-            child.material.forEach(mat => {
-              if (mat.color) mat.color.setHex(0x222222);
-              if (mat.emissive) mat.emissive.setHex(0x000000);
-              if (mat.roughness !== undefined) mat.roughness = 1.0;
-              if (mat.metalness !== undefined) mat.metalness = 0.0;
-              if (mat.transparent !== undefined) mat.transparent = false;
-              if (mat.opacity !== undefined) mat.opacity = 1.0;
-            });
-          } else {
-            if (child.material.color) child.material.color.setHex(0x222222);
-            if (child.material.emissive) child.material.emissive.setHex(0x000000);
-            if (child.material.roughness !== undefined) child.material.roughness = 1.0;
-            if (child.material.metalness !== undefined) child.material.metalness = 0.0;
-            if (child.material.transparent !== undefined) child.material.transparent = false;
-            if (child.material.opacity !== undefined) child.material.opacity = 1.0;
-          }
+      child.userData.clickable = true;
+
+      const materials = Array.isArray(child.material)
+        ? child.material
+        : [child.material];
+
+      materials.forEach((mat: any) => {
+        if (!mat) return;
+
+        mat.transparent = false;
+        mat.opacity = 1;
+        mat.side = THREE.DoubleSide;
+        mat.depthWrite = true;
+        mat.depthTest = true;
+
+        const name = child.name.toLowerCase();
+        const isBase =
+          name.includes('floor') ||
+          name.includes('base') ||
+          name.includes('ground') ||
+          name.includes('slab');
+        const isCube = name === 'cube';
+
+        if (isCube) {
+          mat.color?.setHex(0x8B4513);
+        } else if (isBase) {
+          mat.color?.setHex(0x004700);
         } else {
-          // Make all other objects white - force override
-          if (Array.isArray(child.material)) {
-            child.material.forEach(mat => {
-              if (mat.color) mat.color.setHex(0xffffff);
-              if (mat.emissive) mat.emissive.setHex(0x444444);
-              if (mat.roughness !== undefined) mat.roughness = 0.1;
-              if (mat.metalness !== undefined) mat.metalness = 0.0;
-              if (mat.transparent !== undefined) mat.transparent = false;
-              if (mat.opacity !== undefined) mat.opacity = 1.0;
-            });
-          } else {
-            if (child.material.color) child.material.color.setHex(0xffffff);
-            if (child.material.emissive) child.material.emissive.setHex(0x444444);
-            if (child.material.roughness !== undefined) child.material.roughness = 0.1;
-            if (child.material.metalness !== undefined) child.material.metalness = 0.0;
-            if (child.material.transparent !== undefined) child.material.transparent = false;
-            if (child.material.opacity !== undefined) child.material.opacity = 1.0;
-          }
+          mat.color?.setHex(0xffffff);
         }
+
+        mat.needsUpdate = true;
+      });
+    }
+  });
+
+  // Auto-center each model but apply offset for fine-tuning
+  const box = new THREE.Box3().setFromObject(clonedScene);
+  const center = box.getCenter(new THREE.Vector3());
+  
+  const wrapper = new THREE.Group();
+  wrapper.add(clonedScene);
+  clonedScene.position.set(-center.x, -center.y, -center.z);
+  wrapper.position.set(...offset);
+  wrapper.scale.set(5.5, 5.5, 5.5);
+
+  // Collect static roof labels and structure dimensions
+  const markers: { 
+    name: string; 
+    position: THREE.Vector3;
+    size: THREE.Vector3;
+    center: THREE.Vector3;
+  }[] = [];
+
+  // Now calculate marker positions in world space
+  // Create a temporary world matrix to get accurate world positions
+  wrapper.updateMatrixWorld(true);
+  
+  wrapper.traverse((child: THREE.Object3D) => {
+    if (child instanceof THREE.Mesh) {
+      const name = child.name.toLowerCase();
+
+      const ignoreNames = ['ground', 'plane', 'stairs', 'cube', 'cube001'];
+
+      if (!ignoreNames.includes(name)) {
+        // Get bounding box in local space
+        const childBox = new THREE.Box3().setFromObject(child);
+        
+        // Calculate marker position in local space
+        const localCenter = new THREE.Vector3();
+        childBox.getCenter(localCenter);
+        
+        const size = new THREE.Vector3();
+        childBox.getSize(size);
+        
+        const markerPos = new THREE.Vector3(
+          localCenter.x,
+          childBox.max.y + 0.3,
+          localCenter.z
+        );
+        
+        markers.push({
+          name: child.name,
+          position: markerPos,
+          size: size,
+          center: localCenter,
+        });
       }
     }
   });
-  
-  // Robust centering - reset everything first
-  scene.position.set(0, 0, 0);
-  scene.rotation.set(0, 0, 0);
-  scene.scale.set(1, 1, 1);
-  
-  // Calculate bounding box and center
-  const box = new THREE.Box3().setFromObject(scene);
-  const center = box.getCenter(new THREE.Vector3());
-  const size = box.getSize(new THREE.Vector3());
-  
-  // Center the scene by subtracting the center point
-  scene.position.sub(center);
-  
-  // Update the scene matrix to apply transformations
-  scene.updateMatrix();
-  scene.updateMatrixWorld();
-  
-  // Group everything in a parent object for better control
-  const group = new THREE.Group();
-  group.add(scene.clone());
-  group.position.set(0, 0, 0);
-  
-  return <primitive object={group} scale={6.0} />;
+
+    onLoadMarkers?.(markers);
+
+  return (
+    <>
+      <primitive
+        object={wrapper}
+        onClick={handleClick}
+      />
+      {/* Create invisible clickable meshes for each office */}
+      {markers.map((marker, index) => (
+        <mesh
+          key={`clickable-${index}`}
+          position={[
+            marker.center.x,
+            marker.center.y,
+            marker.center.z,
+          ]}
+          onClick={(e) => {
+            e.stopPropagation();
+            console.log('Invisible mesh clicked:', marker.name);
+            
+            const popupPosition = new THREE.Vector3(
+              marker.center.x,
+              marker.position.y + 0.1,
+              marker.center.z
+            );
+            
+            onSelectOffice?.(marker.name, popupPosition);
+          }}
+        >
+          <boxGeometry args={[
+            marker.size.x * 1.1, // Slightly larger for better click detection
+            marker.size.y * 1.1,
+            marker.size.z * 1.1
+          ]} />
+          <meshBasicMaterial transparent opacity={0} />
+        </mesh>
+      ))}
+    </>
+  );
 }
 
 // Error fallback component for 3D models
@@ -135,9 +279,82 @@ interface CityHallDirectoryProps {
 const CityHallDirectory = ({ onNavigate }: CityHallDirectoryProps) => {
   const [selectedFloor, setSelectedFloor] = useState('first');
   const [selectedCategory, setSelectedCategory] = useState('maps');
+  const [selectedOffice, setSelectedOffice] = useState<{
+    name: string;
+    position: THREE.Vector3;
+  } | null>(null);
+  const [officeMarkers, setOfficeMarkers] = useState<
+    { name: string; position: THREE.Vector3 }[]
+  >([]);
+  const [autoRotate, setAutoRotate] = useState(true);
+  const timeoutRef = useRef<NodeJS.Timeout>();
+  const interactionTimeoutRef = useRef<NodeJS.Timeout>();
+  const controlsRef = useRef<any>(null);
   const { language, theme } = useKiosk();
 
   const currentFloor = floors.find(f => f.id === selectedFloor);
+
+  const officeLabels: Record<string, string> = {
+    city_treasurers: 'City Treasurer',
+    city_planning_office: 'City Planning Office',
+    session_hall: 'Session Hall',
+    clinic: 'Clinic',
+    mitd: 'MITD',
+    coop: 'Coop',
+    sp_admin: 'SP Admin',
+    cdcc: 'CDCC',
+    city_budget_office: 'City Budget Office',
+    city_accountant: 'City Accountant',
+    city_auditors: 'City Auditors',
+    city_treasurers_2: 'City Treasurers Office',
+    city_auditors_2: 'City Auditors Office',
+    cr_male: 'Male CR',
+    cr_female: 'Female CR',
+    licensing: 'Licensing Office',
+    one_stop_shop: 'One Stop Shop',
+    cr_one_stop_shop: 'One Stop Shop CR',
+  };
+
+  const handleUserInteraction = () => {
+    console.log('User interaction detected - stopping rotation');
+    
+    // Clear existing interaction timeout to debounce
+    if (interactionTimeoutRef.current) {
+      clearTimeout(interactionTimeoutRef.current);
+    }
+    
+    setAutoRotate(false);
+    
+    // Clear existing auto-resume timeout
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    
+    // Resume auto-rotation after 5 seconds of no interaction
+    timeoutRef.current = setTimeout(() => {
+      console.log('Resuming auto-rotation');
+      setAutoRotate(true);
+      // Force controls to update
+      if (controlsRef.current) {
+        controlsRef.current.autoRotate = true;
+      }
+    }, 5000);
+  };
+
+  const handleCanvasInteraction = (event: any) => {
+    handleUserInteraction();
+  };
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      if (interactionTimeoutRef.current) {
+        clearTimeout(interactionTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex">
@@ -198,18 +415,33 @@ const CityHallDirectory = ({ onNavigate }: CityHallDirectoryProps) => {
                 preserveDrawingBuffer: false,
                 precision: 'highp',
                 stencil: false,
-                depth: true
+                depth: true,
+                failIfMajorPerformanceCaveat: false
               }}
               shadows
-              style={{ background: '#FFFFFF' }}
-              dpr={window.devicePixelRatio || 1}
+              style={{ background: '#F5F5DC' }}
+              dpr={Math.min(window.devicePixelRatio || 1, 2)}
+              frameloop="demand"
+              onMouseDown={handleCanvasInteraction}
+              onMouseUp={handleCanvasInteraction}
+              onTouchStart={handleCanvasInteraction}
+              onTouchEnd={handleCanvasInteraction}
+              onWheel={handleCanvasInteraction}
+              onPointerMissed={() => {
+                console.log('Pointer missed - deselecting office');
+                setSelectedOffice(null);
+              }}
+              onClick={(e) => {
+                console.log('Canvas clicked directly:', e);
+                // Force handleCanvasInteraction to be called
+                handleCanvasInteraction(e);
+              }}
             >
-              <color attach="background" args={['#FFFFFF']} />
-              <fog attach="fog" args={['#FFFFFF', 10, 50]} />
-              <ambientLight intensity={0.6} />
+              <color attach="background" args={['#F5F5DC']} />
+              <ambientLight intensity={0.4} />
               <directionalLight 
                 position={[10, 10, 5]} 
-                intensity={1.5} 
+                intensity={0.9}
                 castShadow
                 shadow-mapSize={[4096, 4096]}
                 shadow-camera-far={50}
@@ -219,31 +451,83 @@ const CityHallDirectory = ({ onNavigate }: CityHallDirectoryProps) => {
                 shadow-camera-bottom={-20}
                 color="#ffffff"
               />
-              <pointLight position={[-10, 10, -5]} intensity={0.3} color="#ffffff" />
-              <pointLight position={[10, 5, -10]} intensity={0.3} color="#ffffff" />
-              <Suspense fallback={null}>
+              <Suspense fallback={<LoadingFallback />}>
                 <Stage 
-                  intensity={0.6}
-                  environment="studio"
+                  intensity={0.3}
                   shadows
-                  position={[0, 0, 0]}
-                  scale={5.5}
                   adjustCamera={false}
                 >
-                  {currentFloor && <Model url={currentFloor.model} />}
+                  {currentFloor && <Model
+                    url={currentFloor.model}
+                    offset={currentFloor.offset as [number, number, number]}
+                    onSelectOffice={(name, position) => {
+                      console.log('Office selected:', name, position);
+                      setSelectedOffice({ name, position });
+                    }}
+                    onLoadMarkers={(markers) => {
+                      console.log('Received markers in parent:', markers);
+                      setOfficeMarkers(markers);
+                    }}
+                  />}
+                  {officeMarkers.map((office, index) => (
+                    <Html
+                      key={index}
+                      position={[
+                        office.position.x,
+                        office.position.y + 0.03,
+                        office.position.z,
+                      ]}
+                      transform
+                      rotation={[-Math.PI / 2, 0, 0]}
+                      distanceFactor={8}
+                      style={{
+                        pointerEvents: 'none',
+                        userSelect: 'none',
+                      }}
+                    >
+                      <div className="text-black text-[8px] font-semibold tracking-tight whitespace-nowrap">
+                        {(officeLabels[office.name] ||
+                          office.name.replace(/_/g, ' ')).toUpperCase()}
+                      </div>
+                    </Html>
+                  ))}
+                  {selectedOffice && (
+                    <Html
+                      position={[
+                        selectedOffice.position.x,
+                        selectedOffice.position.y + 0.8,
+                        selectedOffice.position.z,
+                      ]}
+                      center
+                    >
+                      <div className="relative">
+                        {/* Location pin shape with text inside */}
+                        <div className="bg-red-500 rounded relative shadow-lg flex items-center justify-center px-3 py-2 min-w-[80px]">
+                          <span className="text-white text-sm font-bold text-center leading-none whitespace-nowrap">
+                            {(officeLabels[selectedOffice.name] || selectedOffice.name.replace(/_/g, ' ')).toUpperCase()}
+                          </span>
+                        </div>
+                        {/* Pin point */}
+                        <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[12px] border-t-red-500"></div>
+                      </div>
+                    </Html>
+                  )}
                 </Stage>
                 <OrbitControls 
-                  enablePan={false}
-                  minDistance={8}
-                  maxDistance={25}
-                  autoRotate
+                  ref={controlsRef}
+                  key={autoRotate ? 'rotating' : 'static'}
+                  enablePan={true}
+                  panSpeed={1}
+                  minDistance={1}
+                  maxDistance={50}
+                  autoRotate={autoRotate}
                   autoRotateSpeed={0.5}
                   enableDamping
                   dampingFactor={0.1}
                   enableZoom={true}
-                  zoomSpeed={0.5}
-                  rotateSpeed={0.5}
-                  target={[0, -1, 0]}
+                  zoomSpeed={1}
+                  rotateSpeed={1}
+                  target={[0, 1, 0]}
                   makeDefault
                 />
               </Suspense>
