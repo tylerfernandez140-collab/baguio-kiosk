@@ -11,6 +11,11 @@ interface KioskContextType {
   resetIdleTimer: () => void;
   isIdle: boolean;
   kioskId: string;
+  selectedFloor: string;
+  setSelectedFloor: (floor: string) => void;
+  navigation: { floorId: string; officeId: string } | null;
+  startNavigation: (floorId: string, officeId: string) => void;
+  clearNavigation: () => void;
 }
 
 const KioskContext = createContext<KioskContextType | null>(null);
@@ -73,9 +78,33 @@ export const KioskProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // 3. Fallback to Environment Variable or Default
     return import.meta.env.VITE_KIOSK_ID || 'kiosk_1';
   });
-  
+
+  const [selectedFloor, setSelectedFloor] = useState('first');
+  const [navigation, setNavigation] = useState<{ floorId: string; officeId: string } | null>(null);
+
+  const startNavigation = (floorId: string, officeId: string) => {
+    // 1. Clear any existing navigation
+    setNavigation(null);
+    
+    // 2. Start from first floor to show line to stairs
+    setSelectedFloor('first');
+    setNavigation({ floorId, officeId });
+
+    // 3. If target is on another floor, wait 4 seconds then switch
+    if (floorId !== 'first') {
+      setTimeout(() => {
+        setSelectedFloor(floorId);
+      }, 4000);
+    }
+  };
+
+  const clearNavigation = () => setNavigation(null);
+
   return (
-    <KioskContext.Provider value={{ language, setLanguage, theme, toggleTheme, resetIdleTimer, isIdle, kioskId }}>
+    <KioskContext.Provider value={{ 
+      language, setLanguage, theme, toggleTheme, resetIdleTimer, isIdle, kioskId,
+      selectedFloor, setSelectedFloor, navigation, startNavigation, clearNavigation
+    }}>
       {children}
     </KioskContext.Provider>
   );

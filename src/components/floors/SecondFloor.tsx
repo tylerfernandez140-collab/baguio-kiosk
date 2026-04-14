@@ -1,3 +1,4 @@
+import * as THREE from 'three';
 import SecondFloorBase, { FloorBaseProps } from './components/SecondFloorBase';
 
 // Comprehensive labels for all detected second floor office meshes
@@ -51,15 +52,26 @@ export const secondFloorLabels: Record<string, string> = {
   CRF002: 'Female\nCR',
 };
 
+const secondFloorPaths: Record<string, THREE.Vector3[]> = {
+  CMO: [
+    new THREE.Vector3(2.14, 0.01, -0.14),
+    new THREE.Vector3(2.13, 0.01, 1.04),
+    new THREE.Vector3(0.39, 0.01, 1.07),
+    new THREE.Vector3(0.43, 0.01, 1.74),
+  ],
+};
+
 export default function SecondFloor(
-  props: Omit<FloorBaseProps, 'url' | 'labels' | 'offset'>
+  props: Omit<FloorBaseProps, 'floorId' | 'url' | 'labels' | 'offset'>
 ) {
   return (
     <SecondFloorBase
+      floorId="second"
       url="/models/second_floor.glb"
       offset={[0, 0, 0]}
       labels={secondFloorLabels}
       labelSize={6}
+      predefinedPaths={secondFloorPaths}
       customLabelPositions={{
         CANTEEN: [-8.56, 0.03, -1.56]
       }}

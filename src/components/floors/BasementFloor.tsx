@@ -9,10 +9,11 @@ export const basementFloorLabels: Record<string, string> = {
 };
 
 export default function BasementFloor(
-  props: Omit<FloorBaseProps, 'url' | 'labels' | 'offset'>
+  props: Omit<FloorBaseProps, 'floorId' | 'url' | 'labels' | 'offset'>
 ) {
   return (
     <BasementFloorBase
+      floorId="basement"
       url="/models/basement.glb"
       offset={[0, 0, 0]}
       labels={basementFloorLabels}

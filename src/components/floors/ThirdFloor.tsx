@@ -10,10 +10,11 @@ export const thirdFloorLabels: Record<string, string> = {
 };
 
 export default function ThirdFloor(
-  props: Omit<FloorBaseProps, 'url' | 'labels' | 'offset'>
+  props: Omit<FloorBaseProps, 'floorId' | 'url' | 'labels' | 'offset'>
 ) {
   return (
     <ThirdFloorBase
+      floorId="third"
       url="/models/attic.glb"
       offset={[0, 0, 0]}
       labels={thirdFloorLabels}

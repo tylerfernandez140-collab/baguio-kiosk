@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { Html, useGLTF, Line } from '@react-three/drei';
 import { useThree, useFrame } from '@react-three/fiber';
+import { useKiosk } from '../../../context/KioskContext';
 
 // 3D Model Component with proper material handling and centering
 function Model({
@@ -308,6 +309,7 @@ function AnimatedPath({ points }: { points: THREE.Vector3[] }) {
 }
 
 export interface FloorBaseProps {
+  floorId: string;
   url: string;
   labels: Record<string, string>;
   offset?: [number, number, number];
@@ -318,6 +320,7 @@ export interface FloorBaseProps {
 }
 
 export default function FloorBase({
+  floorId,
   url,
   labels,
   offset = [0, 0, 0],
@@ -326,6 +329,7 @@ export default function FloorBase({
   labelSize = 5,
   customLabelPositions = {},
 }: FloorBaseProps) {
+  const { navigation, startNavigation } = useKiosk();
   const [officeMarkers, setOfficeMarkers] = useState<{ name: string; position: THREE.Vector3 }[]>([]);
   const [selectedOffice, setSelectedOffice] = useState<{
     name: string;
@@ -341,16 +345,38 @@ export default function FloorBase({
     setActivePath(null);
   }, [url]);
 
-  const handleGetDirection = (officeName: string) => {
-    // Find matching path (case-insensitive and normalized)
-    const normalizedName = officeName.toLowerCase();
-    const pathKey = Object.keys(predefinedPaths).find(key => 
-      key.toLowerCase() === normalizedName
-    );
-    
-    if (pathKey) {
-      setActivePath(predefinedPaths[pathKey]);
+  // Sync active path with global navigation target
+  useEffect(() => {
+    if (!navigation) {
+      setActivePath(null);
+      return;
     }
+
+    if (navigation.floorId === floorId) {
+      // Find matching path on the current floor
+      const normalizedName = navigation.officeId.toLowerCase();
+      const pathKey = Object.keys(predefinedPaths).find(key => 
+        key.toLowerCase() === normalizedName
+      );
+      if (pathKey) {
+        setActivePath(predefinedPaths[pathKey]);
+      } else {
+        setActivePath(null);
+      }
+    } else if (floorId === 'first') {
+      // If we are on first floor and target is elsewhere, show stairs
+      if (predefinedPaths['stairs']) {
+        setActivePath(predefinedPaths['stairs']);
+      } else {
+        setActivePath(null);
+      }
+    } else {
+      setActivePath(null);
+    }
+  }, [navigation, floorId, predefinedPaths]);
+
+  const handleGetDirection = (officeName: string) => {
+    startNavigation(floorId, officeName);
   };
 
   const getOfficeLabel = (name: string) => {

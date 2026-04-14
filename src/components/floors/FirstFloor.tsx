@@ -170,7 +170,12 @@ const firstFloorPaths: Record<string, THREE.Vector3[]> = {
     new THREE.Vector3(-7.75, 0.01, 0.96),
     new THREE.Vector3(-7.75, 0.01, -0.70),
     new THREE.Vector3(-9.65, 0.01, -0.70),
-      ],  
+      ],
+  stairs: [
+    new THREE.Vector3(2.40, 0.01, 1.74), 
+    new THREE.Vector3(2.96, 0.01, 1.72),
+    new THREE.Vector3(2.96, 0.01, 0.5),
+  ],
 };
 
 const firstFloorPathsKiosk2: Record<string, THREE.Vector3[]> = {
@@ -279,11 +284,15 @@ const firstFloorPathsKiosk2: Record<string, THREE.Vector3[]> = {
     new THREE.Vector3(-7.8, 0.01, 1.55), 
     new THREE.Vector3(-7.75, 0.01, -0.70),
     new THREE.Vector3(-9.65, 0.01, -0.70),
-  ],  
+  ],
+  stairs: [
+    new THREE.Vector3(-7.8, 0.01, 1.55), 
+    new THREE.Vector3(2.96, 0.01, 1.72),
+  ],
 };
 
 export default function FirstFloor(
-  props: Omit<FloorBaseProps, 'url' | 'labels' | 'offset'>
+  props: Omit<FloorBaseProps, 'floorId' | 'url' | 'labels' | 'offset'>
 ) {
   const { kioskId } = useKiosk();
   const settings = getKioskSettings(kioskId);
@@ -292,6 +301,7 @@ export default function FirstFloor(
 
   return (
     <FirstFloorBase
+      floorId="first"
       url="/models/first_floor.glb"
       offset={[0, 0, 0]}
       labels={firstFloorLabels}

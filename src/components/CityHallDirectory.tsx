@@ -95,13 +95,12 @@ interface CityHallDirectoryProps {
 }
 
 const CityHallDirectory = ({ onNavigate }: CityHallDirectoryProps) => {
-  const [selectedFloor, setSelectedFloor] = useState('first');
+  const { language, theme, selectedFloor, setSelectedFloor } = useKiosk();
   const [selectedCategory, setSelectedCategory] = useState('maps');
   const [autoRotate, setAutoRotate] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout>();
   const interactionTimeoutRef = useRef<NodeJS.Timeout>();
   const controlsRef = useRef<any>(null);
-  const { language, theme } = useKiosk();
 
   const currentFloor = floors.find(f => f.id === selectedFloor);
 
