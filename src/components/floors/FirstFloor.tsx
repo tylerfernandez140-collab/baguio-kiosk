@@ -21,7 +21,7 @@ export const firstFloorLabels: Record<string, string> = {
   cr_female: 'Female\nCR',
   licensing: 'Permits and \nLicensing\nOffice',
   one_stop_shop: 'One Stop Shop',
-  cr_one_stop_shop: 'One Stop Shop\nCR',
+  'cr_one_stop+shop': 'One Stop Shop\nCR',
 };
 
 function YouAreHere({ position }: { position: [number, number, number] }) {
@@ -140,6 +140,35 @@ const firstFloorPaths: Record<string, THREE.Vector3[]> = {
     new THREE.Vector3(9.65, 0.01, 0.96),
     new THREE.Vector3(9.65, 0.01, 1.20), 
       ],     
+      city_treasurers: [
+    new THREE.Vector3(2.40, 0.01, 1.74), 
+    new THREE.Vector3(2.90, 0.01, 1.74),
+    new THREE.Vector3(2.90, 0.01, 0.96),
+    new THREE.Vector3(-3.50, 0.01, 0.96),
+    new THREE.Vector3(-3.50, 0.01, 0.7), 
+      ],  
+      city_treasurers_2: [
+    new THREE.Vector3(2.40, 0.01, 1.74), 
+    new THREE.Vector3(2.90, 0.01, 1.74),
+    new THREE.Vector3(2.90, 0.01, 0.96),
+    new THREE.Vector3(-3.50, 0.01, 0.96),
+    new THREE.Vector3(-3.50, 0.01, 0.7), 
+      ],  
+      one_stop_shop: [
+    new THREE.Vector3(2.40, 0.01, 1.74), 
+    new THREE.Vector3(2.90, 0.01, 1.74),
+    new THREE.Vector3(2.90, 0.01, 0.96),
+    new THREE.Vector3(-7.75, 0.01, 0.96),
+    new THREE.Vector3(-7.75, 0.01, 0.47), 
+      ],  
+      'cr_one_stop+shop': [
+    new THREE.Vector3(2.40, 0.01, 1.74), 
+    new THREE.Vector3(2.90, 0.01, 1.74),
+    new THREE.Vector3(2.90, 0.01, 0.96),
+    new THREE.Vector3(-7.75, 0.01, 0.96),
+    new THREE.Vector3(-7.75, 0.01, -0.70),
+    new THREE.Vector3(-9.65, 0.01, -0.70),
+      ],  
 };
 
 export default function FirstFloor(
