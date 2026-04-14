@@ -10,6 +10,7 @@ interface KioskContextType {
   toggleTheme: () => void;
   resetIdleTimer: () => void;
   isIdle: boolean;
+  kioskId: string;
 }
 
 const KioskContext = createContext<KioskContextType | null>(null);
@@ -56,8 +57,25 @@ export const KioskProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const toggleTheme = () => setTheme(t => t === 'day' ? 'night' : 'day');
 
+  const [kioskId] = useState<string>(() => {
+    // 1. Check URL for ?kioskId=...
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlId = urlParams.get('kioskId');
+    if (urlId) {
+      localStorage.setItem('kiosk-id', urlId);
+      return urlId;
+    }
+    
+    // 2. Check Local Storage for previously saved ID
+    const savedId = localStorage.getItem('kiosk-id');
+    if (savedId) return savedId;
+    
+    // 3. Fallback to Environment Variable or Default
+    return import.meta.env.VITE_KIOSK_ID || 'kiosk_1';
+  });
+  
   return (
-    <KioskContext.Provider value={{ language, setLanguage, theme, toggleTheme, resetIdleTimer, isIdle }}>
+    <KioskContext.Provider value={{ language, setLanguage, theme, toggleTheme, resetIdleTimer, isIdle, kioskId }}>
       {children}
     </KioskContext.Provider>
   );
