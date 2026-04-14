@@ -185,7 +185,7 @@ function CoordinateDetector() {
       const intersects = raycaster.intersectObjects(scene.children, true);
       const floorIntersect = intersects.find(intersect => {
         const name = intersect.object.name.toLowerCase();
-        return name.includes('floor') || name.includes('ground') || name.includes('base') || name.includes('slab');
+        return name.includes('floor') || name.includes('ground') || name.includes('base') || name.includes('slab') || name.includes('plane');
       });
 
       if (floorIntersect) {
@@ -313,6 +313,8 @@ export interface FloorBaseProps {
   offset?: [number, number, number];
   children?: React.ReactNode;
   predefinedPaths?: Record<string, THREE.Vector3[]>;
+  labelSize?: number;
+  customLabelPositions?: Record<string, [number, number, number]>;
 }
 
 export default function FloorBase({
@@ -321,6 +323,8 @@ export default function FloorBase({
   offset = [0, 0, 0],
   children,
   predefinedPaths = {},
+  labelSize = 5,
+  customLabelPositions = {},
 }: FloorBaseProps) {
   const [officeMarkers, setOfficeMarkers] = useState<{ name: string; position: THREE.Vector3 }[]>([]);
   const [selectedOffice, setSelectedOffice] = useState<{
@@ -374,11 +378,15 @@ export default function FloorBase({
       {officeMarkers.map((office, index) => (
         <Html
           key={`${url}-label-${index}`}
-          position={[
-            office.position.x,
-            office.position.y + 0.03,
-            office.position.z,
-          ]}
+          position={
+            customLabelPositions[office.name] 
+              ? customLabelPositions[office.name] 
+              : [
+                  office.position.x,
+                  office.position.y + 0.03,
+                  office.position.z,
+                ]
+          }
           transform
           rotation={[-Math.PI / 2, 0, 0]}
           distanceFactor={8}
@@ -387,7 +395,10 @@ export default function FloorBase({
             userSelect: 'none',
           }}
         >
-          <div className="text-black text-[8px] font-semibold tracking-tight whitespace-pre-line text-center leading-tight">
+          <div 
+            className="text-black font-semibold tracking-tight whitespace-pre-line text-center leading-tight"
+            style={{ fontSize: `${labelSize}px` }}
+          >
             {getOfficeLabel(office.name).toUpperCase()}
           </div>
         </Html>

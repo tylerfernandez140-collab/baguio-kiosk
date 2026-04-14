@@ -1,4 +1,4 @@
-import FloorBase, { FloorBaseProps } from '../FloorBase';
+import BasementFloorBase, { FloorBaseProps } from './components/BasementFloorBase';
 
 // Add and modify basement floor specific labels here following the format below:
 export const basementFloorLabels: Record<string, string> = {
@@ -12,7 +12,7 @@ export default function BasementFloor(
   props: Omit<FloorBaseProps, 'url' | 'labels' | 'offset'>
 ) {
   return (
-    <FloorBase
+    <BasementFloorBase
       url="/models/basement.glb"
       offset={[0, 0, 0]}
       labels={basementFloorLabels}

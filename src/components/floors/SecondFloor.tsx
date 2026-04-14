@@ -1,36 +1,36 @@
-import FloorBase, { FloorBaseProps } from '../FloorBase';
+import SecondFloorBase, { FloorBaseProps } from './components/SecondFloorBase';
 
 // Comprehensive labels for all detected second floor office meshes
 export const secondFloorLabels: Record<string, string> = {
   OOTVM: 'Office of the\nVice Mayor',
-  CMO: 'Office of the\nCity Mayor',
+  CMO: 'City Mayor Office',
   
   // Councilors
-  COUN1: 'Councilor\nOffice 1',
-  COUN2: 'Councilor\nOffice 2',
-  COUN3: 'Councilor\nOffice 3',
-  COUN4: 'Councilor\nOffice 4',
-  COUN5: 'Councilor\nOffice 5',
-  COUN6: 'Councilor\nOffice 6',
-  COUN7: 'Councilor\nOffice 7',
-  COUN8: 'Councilor\nOffice 8',
-  COUN9: 'Councilor\nOffice 9',
-  COUN10: 'Councilor\nOffice 10',
-  COUN11: 'Councilor\nOffice 11',
-  COUN12: 'Councilor\nOffice 12',
-  COUN13: 'Councilor\nOffice 13',
+  COUN1: 'Committee\non\nPublic\nProtection',
+  COUN2: 'Committee\non\nPublic\nUtilities',
+  COUN3: 'Committee\non\nTourism',
+  COUN4: 'Committee\non\nUrban\nPlanning',
+  COUN5: 'Sangguniang\nKabataan\nPederasyon',
+  COUN6: 'Committee\non\nEthics',
+  COUN7: 'Comittee\non\nLaws and\nGovernance',
+  COUN8: 'Committee\non\nHealth',
+  COUN9: 'Committee\non\nPublic\nWorks',
+  COUN10: 'Committee\non\nMarket',
+  COUN11: 'Committee\non\nEmployment',
+  COUN12: 'Receiving /\nReleasing',
+  COUN13: 'Committee\non\nSocial Services',
 
   // Administrative & Departments
-  CAO: 'City Accountant\nOffice',
+  CAO: 'City Assessors\nOffice',
   MITD: 'MITD',
   DILG: 'DILG',
-  CSO: 'CSO',
+  CSO: 'SP\nResearch\nDivision',
   POSD: 'POSD',
   PESO: 'PESO',
-  CTO: 'City Treasurer\nOffice',
-  CADO: 'City Admin\nOffice',
+  CADO: 'City\nAdminstrator\nOffice',
   CLO: 'City Legal\nOffice',
-  PIO: 'Public Info\nOffice',
+  PIO: 'Public\nInformation\nOffice',
+  MITD001: 'CTOC',
   
   // Facilities & Amenities
   CANTEEN: 'Canteen',
@@ -38,9 +38,9 @@ export const secondFloorLabels: Record<string, string> = {
   HE: 'HE',
   SHE: 'SHE',
   STENO: 'Stenographers',
-  RR: 'Rest Room',
+  RR: 'Research Room',
   STO: 'Storage',
-  OFTC: 'Office',
+  OFTC: 'Congressman\nOffice',
 
   // Restrooms
   CRM: 'Male\nCR',
@@ -55,10 +55,14 @@ export default function SecondFloor(
   props: Omit<FloorBaseProps, 'url' | 'labels' | 'offset'>
 ) {
   return (
-    <FloorBase
+    <SecondFloorBase
       url="/models/second_floor.glb"
       offset={[0, 0, 0]}
       labels={secondFloorLabels}
+      labelSize={6}
+      customLabelPositions={{
+        CANTEEN: [-8.56, 0.03, -1.56]
+      }}
       {...props}
     />
   );

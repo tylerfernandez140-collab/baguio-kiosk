@@ -1,4 +1,4 @@
-import FloorBase, { FloorBaseProps } from '../FloorBase';
+import ThirdFloorBase, { FloorBaseProps } from './components/ThirdFloorBase';
 
 // Add and modify third floor specific labels here following the format below:
 export const thirdFloorLabels: Record<string, string> = {
@@ -13,7 +13,7 @@ export default function ThirdFloor(
   props: Omit<FloorBaseProps, 'url' | 'labels' | 'offset'>
 ) {
   return (
-    <FloorBase
+    <ThirdFloorBase
       url="/models/attic.glb"
       offset={[0, 0, 0]}
       labels={thirdFloorLabels}

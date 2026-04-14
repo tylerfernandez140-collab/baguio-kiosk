@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { Html } from '@react-three/drei';
 import { MapPin } from 'lucide-react';
-import FloorBase, { FloorBaseProps } from '../FloorBase';
+import FirstFloorBase, { FloorBaseProps } from './components/FirstFloorBase';
 
 export const firstFloorLabels: Record<string, string> = {
   city_treasurers: 'City Treasurer',
@@ -146,7 +146,7 @@ export default function FirstFloor(
   props: Omit<FloorBaseProps, 'url' | 'labels' | 'offset'>
 ) {
   return (
-    <FloorBase
+    <FirstFloorBase
       url="/models/first_floor.glb"
       offset={[0, 0, 0]}
       labels={firstFloorLabels}
@@ -154,6 +154,6 @@ export default function FirstFloor(
       {...props}
     >
       <YouAreHere position={[2.44, 0.5, 1.56]} />
-    </FloorBase>
+    </FirstFloorBase>
   );
 }
