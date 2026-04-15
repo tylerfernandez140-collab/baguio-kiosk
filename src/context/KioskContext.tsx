@@ -94,7 +94,7 @@ export const KioskProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (floorId !== 'first') {
       setTimeout(() => {
         setSelectedFloor(floorId);
-      }, 4000);
+      }, 1000);
     }
   };
 
