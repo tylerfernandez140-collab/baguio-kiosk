@@ -213,6 +213,61 @@ const secondFloorPaths: Record<string, THREE.Vector3[]> = {
     new THREE.Vector3(6.2, 0.01, 1.04),
     new THREE.Vector3(6.2, 0.01, 0.3),
   ],
+      MITD: [
+    new THREE.Vector3(3.25, 0.01, -0.14),
+    new THREE.Vector3(3.25, 0.01, 1.04),
+    new THREE.Vector3(8.97, 0.01, 1.04),
+    new THREE.Vector3(8.97, 0.01, 0.3),
+  ],
+      DILG: [
+    new THREE.Vector3(3.25, 0.01, -0.14),
+    new THREE.Vector3(3.25, 0.01, 1.04),
+    new THREE.Vector3(9.95, 0.01, 1.04),
+    new THREE.Vector3(9.95, 0.01, -2.4),
+    new THREE.Vector3(9.6, 0.01, -2.4),
+  ],
+      CRM001: [
+    new THREE.Vector3(3.25, 0.01, -0.14),
+    new THREE.Vector3(3.25, 0.01, 1.04),
+    new THREE.Vector3(9.95, 0.01, 1.04),
+    new THREE.Vector3(9.95, 0.01, -3.07),
+    new THREE.Vector3(10.18, 0.01, -3.07),
+  ],
+      CRF001: [
+    new THREE.Vector3(3.25, 0.01, -0.14),
+    new THREE.Vector3(3.25, 0.01, 1.04),
+    new THREE.Vector3(9.95, 0.01, 1.04),
+    new THREE.Vector3(9.95, 0.01, -2.4),
+    new THREE.Vector3(10.5, 0.01, -2.4),
+  ],
+      CSO: [
+    new THREE.Vector3(3.25, 0.01, -0.14),
+    new THREE.Vector3(3.25, 0.01, 1.04),
+    new THREE.Vector3(9.95, 0.01, 1.04),
+    new THREE.Vector3(9.95, 0.01, -1.45),
+    new THREE.Vector3(10.5, 0.01, -1.45),
+  ],
+      RR: [
+    new THREE.Vector3(3.25, 0.01, -0.14),
+    new THREE.Vector3(3.25, 0.01, 1.04),
+    new THREE.Vector3(9.95, 0.01, 1.04),
+    new THREE.Vector3(9.95, 0.01, -0.38),
+    new THREE.Vector3(10.5, 0.01, -0.38),
+  ],
+      STENO: [
+    new THREE.Vector3(3.25, 0.01, -0.14),
+    new THREE.Vector3(3.25, 0.01, 1.04),
+    new THREE.Vector3(9.95, 0.01, 1.04),
+    new THREE.Vector3(9.95, 0.01, 0.38),
+    new THREE.Vector3(10.5, 0.01, 0.38),
+  ],
+      COUN5: [
+    new THREE.Vector3(3.25, 0.01, -0.14),
+    new THREE.Vector3(3.25, 0.01, 1.04),
+    new THREE.Vector3(9.95, 0.01, 1.04),
+    new THREE.Vector3(9.95, 0.01, 1.35),  
+    new THREE.Vector3(10.5, 0.01, 1.35),
+  ],  
 };
 
 
