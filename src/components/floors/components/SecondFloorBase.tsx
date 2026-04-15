@@ -28,25 +28,34 @@ function Model({
   
   const handleClick = (event: any) => {
     event.stopPropagation();
-    const clickedObject = event.object;
-    
-    // Ignore base geometry
-    const name = clickedObject.name.toLowerCase();
-    const isBase = ['ground', 'plane', 'stairs', 'cube', 'base', 'floor', 'cto'].some(ignored => name.includes(ignored));
-    
-    if (isBase) return;
-    
-    const box = new THREE.Box3().setFromObject(clickedObject);
-    const center = new THREE.Vector3();
-    box.getCenter(center);
 
-    const popupPosition = new THREE.Vector3(
-      center.x,
-      box.max.y + 0.8,
-      center.z
-    );
+    // Iterate through ALL ray intersections to find the first clickable office.
+    // This fixes offices (e.g. COUN5, COUN6, COUN7, POSD) that are blocked by
+    // overlapping non-clickable geometry (walls, ceilings, floor slabs).
+    const intersections = event.intersections || [{ object: event.object }];
 
-    onSelectOffice?.(clickedObject.name, popupPosition);
+    for (const intersection of intersections) {
+      const clickedObject = intersection.object;
+      const name = (clickedObject.name || '').toLowerCase();
+      const isBase = ['ground', 'plane', 'stairs', 'cube', 'base', 'floor', 'cto'].some(
+        ignored => name.includes(ignored)
+      );
+
+      if (isBase) continue; // Skip base geometry, check next intersection
+
+      const box = new THREE.Box3().setFromObject(clickedObject);
+      const center = new THREE.Vector3();
+      box.getCenter(center);
+
+      const popupPosition = new THREE.Vector3(
+        center.x,
+        box.max.y + 0.8,
+        center.z
+      );
+
+      onSelectOffice?.(clickedObject.name, popupPosition);
+      return; // Found a clickable office, stop
+    }
   };
 
   // Memoize the processed scene to prevent recreation on every render

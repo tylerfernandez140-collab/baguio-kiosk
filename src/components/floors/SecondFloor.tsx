@@ -265,9 +265,66 @@ const secondFloorPaths: Record<string, THREE.Vector3[]> = {
     new THREE.Vector3(3.25, 0.01, -0.14),
     new THREE.Vector3(3.25, 0.01, 1.04),
     new THREE.Vector3(9.95, 0.01, 1.04),
-    new THREE.Vector3(9.95, 0.01, 1.35),  
-    new THREE.Vector3(10.5, 0.01, 1.35),
+    new THREE.Vector3(9.95, 0.01, 1.25),  
+    new THREE.Vector3(10.5, 0.01, 1.25),
   ],  
+      COUN6: [
+    new THREE.Vector3(3.25, 0.01, -0.14),
+    new THREE.Vector3(3.25, 0.01, 1.04),
+    new THREE.Vector3(9.95, 0.01, 1.04),
+    new THREE.Vector3(9.95, 0.01, 2.15),
+    new THREE.Vector3(10.5, 0.01, 2.15),
+  ],
+      COUN7: [
+    new THREE.Vector3(3.25, 0.01, -0.14),
+    new THREE.Vector3(3.25, 0.01, 1.04),
+    new THREE.Vector3(9.95, 0.01, 1.04),
+    new THREE.Vector3(9.95, 0.01, 3.1),
+    new THREE.Vector3(10.5, 0.01, 3.1),
+  ],
+      POSD: [
+    new THREE.Vector3(3.25, 0.01, -0.14),
+    new THREE.Vector3(3.25, 0.01, 1.04),
+    new THREE.Vector3(9.95, 0.01, 1.04),
+    new THREE.Vector3(9.95, 0.01, 3.96),
+    new THREE.Vector3(10.5, 0.01, 3.96),
+  ],
+      COUN12: [
+    new THREE.Vector3(3.25, 0.01, -0.14),
+    new THREE.Vector3(3.25, 0.01, 1.04),
+    new THREE.Vector3(4, 0.01, 1.04),
+    new THREE.Vector3(4, 0.01, 1.8),
+  ],
+      COUN11: [
+    new THREE.Vector3(3.25, 0.01, -0.14),
+    new THREE.Vector3(3.25, 0.01, 1.04),
+    new THREE.Vector3(5, 0.01, 1.04),
+    new THREE.Vector3(5, 0.01, 1.8),
+  ],
+      COUN10: [
+    new THREE.Vector3(3.25, 0.01, -0.14),
+    new THREE.Vector3(3.25, 0.01, 1.04),
+    new THREE.Vector3(5.88, 0.01, 1.04),
+    new THREE.Vector3(5.88, 0.01, 1.8),
+  ],
+      COUN9: [
+    new THREE.Vector3(3.25, 0.01, -0.14),
+    new THREE.Vector3(3.25, 0.01, 1.04),
+    new THREE.Vector3(6.65, 0.01, 1.04),
+    new THREE.Vector3(6.65, 0.01, 1.8),
+  ],
+      COUN8: [
+    new THREE.Vector3(3.25, 0.01, -0.14),
+    new THREE.Vector3(3.25, 0.01, 1.04),
+    new THREE.Vector3(7.5, 0.01, 1.04),
+    new THREE.Vector3(7.5, 0.01, 1.8),
+  ],
+      MITD001: [
+    new THREE.Vector3(3.25, 0.01, -0.14),
+    new THREE.Vector3(3.25, 0.01, 1.04),
+    new THREE.Vector3(8.18, 0.01, 1.04),
+    new THREE.Vector3(8.18, 0.01, 1.8),
+  ],
 };
 
 
