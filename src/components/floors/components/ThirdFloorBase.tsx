@@ -32,7 +32,7 @@ function Model({
     
     // Ignore base geometry
     const name = clickedObject.name.toLowerCase();
-    const isBase = ['ground', 'plane', 'stairs', 'cube', 'base', 'floor'].some(ignored => name.includes(ignored));
+    const isBase = ['ground', 'plane', 'stairs', 'cube', 'base', 'floor', 'outline', 'center'].some(ignored => name.includes(ignored));
     
     if (isBase) return;
     
@@ -57,11 +57,23 @@ function Model({
     clonedScene.traverse((child: THREE.Object3D) => {
       if (child instanceof THREE.Mesh) {
         const name = child.name.toLowerCase();
-        const isBase = ['ground', 'plane', 'stairs', 'cube', 'base', 'floor'].some(ignored => name.includes(ignored));
-        
+        const isOutline = name.includes('outline');
+        const isCenter = name.includes('center');
+        // plane001 is base (green), plane is office (white/detectable)
+        const isFloorBase = ['ground', 'stairs', 'base', 'floor'].some(ignored => name.includes(ignored)) || name === 'plane001' || name === 'plane.001';
+        const isStairs = name.includes('cube');
+        const isBase = isOutline || isFloorBase;
+
         child.castShadow = true;
         child.receiveShadow = true;
         child.userData.clickable = !isBase;
+
+        // Clone materials to prevent shared material color bleed between meshes
+        if (Array.isArray(child.material)) {
+          child.material = child.material.map((mat: any) => mat.clone());
+        } else if (child.material) {
+          child.material = child.material.clone();
+        }
 
         const materials = Array.isArray(child.material)
           ? child.material
@@ -75,13 +87,16 @@ function Model({
           mat.depthWrite = true;
           mat.depthTest = true;
 
-          const isCube = name === 'cube';
-          if (isCube) {
-            mat.color?.setHex(0x8B4513);
-          } else if (isBase) {
-            mat.color?.setHex(0x004700);
-          } else {
-            mat.color?.setHex(0xffffff);
+if (isOutline) {
+             mat.color?.setHex(0x000000); // Outline = Black
+           } else if (isFloorBase) {
+             mat.color?.setHex(0x004700); // Base = Green
+           } else if (isStairs) {
+             mat.color?.setHex(0x8B4513); // Stairs = Brown
+           } else if (isCenter) {
+             mat.color?.setHex(0xFFFF00); // Center = Yellow
+           } else {
+            mat.color?.setHex(0xffffff); // Offices = White
           }
           mat.needsUpdate = true;
         });
@@ -117,7 +132,8 @@ function Model({
       wrapper.traverse((child: THREE.Object3D) => {
         if (child instanceof THREE.Mesh) {
           const name = child.name.toLowerCase();
-          const isIgnored = ['ground', 'plane', 'stairs', 'cube', 'base', 'floor'].some(ignored => name.includes(ignored));
+          // plane001 is base (ignored), plane is office (detectable)
+          const isIgnored = ['ground', 'stairs', 'base', 'floor', 'outline', 'cube', 'center'].some(ignored => name.includes(ignored)) || name === 'plane001' || name === 'plane.001';
 
           if (!isIgnored) {
             const childBox = new THREE.Box3().setFromObject(child);
@@ -138,12 +154,14 @@ function Model({
               size: size,
               center: localCenter,
             });
+            console.log(`Mesh: ${child.name} at Position:`, markerPos);
           }
         }
       });
 
       if (detectedMarkers.length > 0) {
         console.log(`Scan Complete for: ${url}`, detectedMarkers.length, "markers found");
+        console.log("Mesh names found:", detectedMarkers.map(m => m.name));
         onLoadMarkers(detectedMarkers);
         isLoadedRef.current = true;
       }
