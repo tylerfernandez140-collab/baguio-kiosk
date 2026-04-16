@@ -33,8 +33,11 @@ function Model({
     // Ignore base geometry
     const name = clickedObject.name.toLowerCase();
     const isBase = ['ground', 'plane', 'stairs', 'cube', 'base', 'floor'].some(ignored => name.includes(ignored));
+    const isDisc = name.includes('disc');
+    const isTriangle = name.includes('traingle');
+    const isPWD = name.includes('pwd');
     
-    if (isBase) return;
+    if (isBase || isDisc || isTriangle || isPWD) return;
     
     const box = new THREE.Box3().setFromObject(clickedObject);
     const center = new THREE.Vector3();
@@ -54,14 +57,37 @@ function Model({
     isLoadedRef.current = false; // Reset loaded flag on url/offset change
     const clonedScene = scene.clone(true);
 
+    // Log all mesh names in the model
+    console.log(`=== MESH OBJECTS IN: ${url} ===`);
+    const allMeshes: string[] = [];
+    clonedScene.traverse((child: THREE.Object3D) => {
+      if (child instanceof THREE.Mesh) {
+        allMeshes.push(child.name);
+      }
+    });
+    console.log('All meshes:', allMeshes);
+    console.log('==================');
+
     clonedScene.traverse((child: THREE.Object3D) => {
       if (child instanceof THREE.Mesh) {
         const name = child.name.toLowerCase();
         const isBase = ['ground', 'plane', 'stairs', 'cube', 'base', 'floor'].some(ignored => name.includes(ignored));
+        const isDisc = name.includes('disc');
+        const isTriangle = name.includes('traingle');
+        const isPWD = name.includes('pwd');
         
         child.castShadow = true;
         child.receiveShadow = true;
-        child.userData.clickable = !isBase;
+        
+        // Base elements, Disc, Triangle, and PWD are non-clickable
+        child.userData.clickable = !isBase && !isDisc && !isTriangle && !isPWD;
+
+        // Clone materials to prevent shared material color bleed between meshes
+        if (Array.isArray(child.material)) {
+          child.material = child.material.map((mat: any) => mat.clone());
+        } else if (child.material) {
+          child.material = child.material.clone();
+        }
 
         const materials = Array.isArray(child.material)
           ? child.material
@@ -76,12 +102,20 @@ function Model({
           mat.depthTest = true;
 
           const isCube = name === 'cube';
+          const isStairs = name.includes('stairs');
           if (isCube) {
             mat.color?.setHex(0x8B4513);
+          } else if (isStairs) {
+            mat.color?.setHex(0x90EE90); // Stairs are Light Green
+          } else if (isDisc) {
+            mat.color?.setHex(0x004700); // Disc is Green
+            mat.polygonOffset = true;
+            mat.polygonOffsetFactor = -1;
+            mat.polygonOffsetUnits = -4;
           } else if (isBase) {
-            mat.color?.setHex(0x004700);
+            mat.color?.setHex(0x000000); // Base elements (Ground) are Black
           } else {
-            mat.color?.setHex(0xffffff);
+            mat.color?.setHex(0xffffff); // Offices are White
           }
           mat.needsUpdate = true;
         });
@@ -117,9 +151,12 @@ function Model({
       wrapper.traverse((child: THREE.Object3D) => {
         if (child instanceof THREE.Mesh) {
           const name = child.name.toLowerCase();
-          const isIgnored = ['ground', 'plane', 'stairs', 'cube', 'base', 'floor'].some(ignored => name.includes(ignored));
+          const isBase = ['ground', 'plane', 'stairs', 'cube', 'base', 'floor'].some(ignored => name.includes(ignored));
+          const isDisc = name.includes('disc');
+          const isTriangle = name.includes('traingle');
+          const isPWD = name.includes('pwd');
 
-          if (!isIgnored) {
+          if (!isBase && !isDisc && !isTriangle && !isPWD) {
             const childBox = new THREE.Box3().setFromObject(child);
             const localCenter = new THREE.Vector3();
             childBox.getCenter(localCenter);
