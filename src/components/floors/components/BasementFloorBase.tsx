@@ -101,12 +101,18 @@ function Model({
           mat.depthWrite = true;
           mat.depthTest = true;
 
-          const isCube = name === 'cube';
+          const isCube = name.includes('cube');
           const isStairs = name.includes('stairs');
           if (isCube) {
             mat.color?.setHex(0x8B4513);
+            mat.polygonOffset = true;
+            mat.polygonOffsetFactor = -1;
+            mat.polygonOffsetUnits = -4;
           } else if (isStairs) {
             mat.color?.setHex(0x90EE90); // Stairs are Light Green
+            mat.polygonOffset = true;
+            mat.polygonOffsetFactor = -1;
+            mat.polygonOffsetUnits = -2;
           } else if (isDisc) {
             mat.color?.setHex(0x004700); // Disc is Green
             mat.polygonOffset = true;

@@ -66,11 +66,22 @@ function Model({
     clonedScene.traverse((child: THREE.Object3D) => {
       if (child instanceof THREE.Mesh) {
         const name = child.name.toLowerCase();
-        const isBase = ['ground', 'plane', 'stairs', 'cube', 'base', 'floor', 'cto'].some(ignored => name.includes(ignored));
+        const isCube = name.includes('cube');
+        const isStairs = name.includes('stairs');
+        const isExactPlane = name === 'plane';
+        const isFloorBase = ['ground', 'base', 'floor', 'cto'].some(ignored => name.includes(ignored)) || (name.includes('plane') && !isExactPlane);
+        const isBase = isFloorBase || isStairs || isCube || isExactPlane;
         
         child.castShadow = true;
         child.receiveShadow = true;
         child.userData.clickable = !isBase;
+
+        // Clone materials to prevent shared material color bleed between meshes
+        if (Array.isArray(child.material)) {
+          child.material = child.material.map((mat: any) => mat.clone());
+        } else if (child.material) {
+          child.material = child.material.clone();
+        }
 
         const materials = Array.isArray(child.material)
           ? child.material
@@ -84,13 +95,20 @@ function Model({
           mat.depthWrite = true;
           mat.depthTest = true;
 
-          const isCube = name === 'cube';
           if (isCube) {
-            mat.color?.setHex(0x8B4513);
-          } else if (isBase) {
-            mat.color?.setHex(0x004700);
+            mat.color?.setHex(0x8B4513); // Cube = Brown
+            mat.polygonOffset = true;
+            mat.polygonOffsetFactor = -1;
+            mat.polygonOffsetUnits = -4;
+          } else if (isStairs || isExactPlane) {
+            mat.color?.setHex(0x90EE90); // Stairs and Exact Plane = Light Green
+            mat.polygonOffset = true;
+            mat.polygonOffsetFactor = -1;
+            mat.polygonOffsetUnits = -2;
+          } else if (isFloorBase) {
+            mat.color?.setHex(0x004700); // Base = Green
           } else {
-            mat.color?.setHex(0xffffff);
+            mat.color?.setHex(0xffffff); // Offices = White
           }
           mat.needsUpdate = true;
         });

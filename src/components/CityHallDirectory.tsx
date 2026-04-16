@@ -123,15 +123,36 @@ const CityHallDirectory = ({ onNavigate }: CityHallDirectoryProps) => {
     };
   }, []);
 
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+  };
+
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' });
+  };
+
+  const formatDay = (date: Date) => {
+    return date.toLocaleDateString([], { weekday: 'long' });
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex">
       {/* Left Sidebar - Floor Selection */}
       <div className="w-24 bg-green-700 shadow-lg flex flex-col items-center py-4 space-y-3">
         {/* Time Display */}
         <div className="text-white text-xs text-center mb-4">
-          <div className="font-bold">04:30 PM</div>
-          <div>March 27, 2026</div>
-          <div>Friday</div>
+          <div className="font-bold uppercase">{formatTime(currentTime)}</div>
+          <div className="text-[10px]">{formatDate(currentTime)}</div>
+          <div className="text-[10px] opacity-80 uppercase">{formatDay(currentTime)}</div>
         </div>
 
         {/* Floor Buttons */}

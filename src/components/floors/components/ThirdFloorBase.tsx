@@ -59,10 +59,10 @@ function Model({
         const name = child.name.toLowerCase();
         const isOutline = name.includes('outline');
         const isCenter = name.includes('center');
-        // plane001 is base (green), plane is office (white/detectable)
-        const isFloorBase = ['ground', 'stairs', 'base', 'floor'].some(ignored => name.includes(ignored)) || name === 'plane001' || name === 'plane.001';
-        const isStairs = name.includes('cube');
-        const isBase = isOutline || isFloorBase;
+        const isCube = name.includes('cube');
+        const isStairs = name.includes('stairs');
+        const isFloorBase = ['ground', 'base', 'floor'].some(ignored => name.includes(ignored)) || name === 'plane001' || name === 'plane.001';
+        const isBase = isOutline || isFloorBase || isStairs || isCube;
 
         child.castShadow = true;
         child.receiveShadow = true;
@@ -87,15 +87,20 @@ function Model({
           mat.depthWrite = true;
           mat.depthTest = true;
 
-if (isOutline) {
-             mat.color?.setHex(0x000000); // Outline = Black
-           } else if (isFloorBase) {
-             mat.color?.setHex(0x004700); // Base = Green
-           } else if (isStairs) {
-             mat.color?.setHex(0x8B4513); // Stairs = Brown
-           } else if (isCenter) {
-             mat.color?.setHex(0xFFFF00); // Center = Yellow
-           } else {
+          if (isOutline) {
+            mat.color?.setHex(0x000000); // Outline = Black
+          } else if (isCube) {
+            mat.color?.setHex(0x8B4513); // Cube = Brown
+            mat.polygonOffset = true;
+            mat.polygonOffsetFactor = -1;
+            mat.polygonOffsetUnits = -4;
+          } else if (isStairs) {
+            mat.color?.setHex(0x90EE90); // Stairs = Light Green
+          } else if (isFloorBase) {
+            mat.color?.setHex(0x004700); // Base = Green
+          } else if (isCenter) {
+            mat.color?.setHex(0xFFFF00); // Center = Yellow
+          } else {
             mat.color?.setHex(0xffffff); // Offices = White
           }
           mat.needsUpdate = true;

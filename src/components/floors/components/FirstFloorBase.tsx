@@ -63,6 +63,13 @@ function Model({
         child.receiveShadow = true;
         child.userData.clickable = !isBase;
 
+        // Clone materials to prevent shared material color bleed between meshes
+        if (Array.isArray(child.material)) {
+          child.material = child.material.map((mat: any) => mat.clone());
+        } else if (child.material) {
+          child.material = child.material.clone();
+        }
+
         const materials = Array.isArray(child.material)
           ? child.material
           : [child.material];
@@ -75,9 +82,18 @@ function Model({
           mat.depthWrite = true;
           mat.depthTest = true;
 
-          const isCube = name === 'cube';
+          const isCube = name.includes('cube');
+          const isStairs = name.includes('stairs');
           if (isCube) {
             mat.color?.setHex(0x8B4513);
+            mat.polygonOffset = true;
+            mat.polygonOffsetFactor = -1;
+            mat.polygonOffsetUnits = -4;
+          } else if (isStairs) {
+            mat.color?.setHex(0x90EE90);
+            mat.polygonOffset = true;
+            mat.polygonOffsetFactor = -1;
+            mat.polygonOffsetUnits = -2;
           } else if (isBase) {
             mat.color?.setHex(0x004700);
           } else {
