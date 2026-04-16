@@ -327,6 +327,14 @@ const secondFloorPaths: Record<string, THREE.Vector3[]> = {
     new THREE.Vector3(8.18, 0.01, 1.04),
     new THREE.Vector3(8.18, 0.01, 1.8),
   ],
+  stairs: [
+    new THREE.Vector3(2.14, 0.01, -0.14),
+    new THREE.Vector3(2.13, 0.01, 1.04),
+    new THREE.Vector3(-4.55, 0.01, 1.04),
+    new THREE.Vector3(-4.55, 0.01, 0.70),
+    new THREE.Vector3(-6.9, 0.01, 0.70),
+    new THREE.Vector3(-6.9, 0.01,-1.09),
+  ],
 };
 
 

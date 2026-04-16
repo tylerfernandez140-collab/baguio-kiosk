@@ -379,6 +379,13 @@ export default function FloorBase({
       } else {
         setActivePath(null);
       }
+    } else if (floorId === 'second' && navigation.floorId === 'third') {
+      // If we are on second floor and target is third floor, show stairs
+      if (predefinedPaths['stairs']) {
+        setActivePath(predefinedPaths['stairs']);
+      } else {
+        setActivePath(null);
+      }
     } else {
       setActivePath(null);
     }

@@ -90,8 +90,15 @@ export const KioskProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setSelectedFloor('first');
     setNavigation({ floorId, officeId });
 
-    // 3. If target is on another floor, wait 4 seconds then switch
-    if (floorId !== 'first') {
+    // 3. If target is on another floor, sequence the transitions
+    if (floorId === 'third') {
+      setTimeout(() => {
+        setSelectedFloor('second');
+        setTimeout(() => {
+          setSelectedFloor('third');
+        }, 1000);
+      }, 1000);
+    } else if (floorId !== 'first') {
       setTimeout(() => {
         setSelectedFloor(floorId);
       }, 1000);
