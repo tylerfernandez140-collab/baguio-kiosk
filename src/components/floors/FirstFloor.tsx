@@ -287,7 +287,9 @@ const firstFloorPathsKiosk2: Record<string, THREE.Vector3[]> = {
   ],
   stairs: [
     new THREE.Vector3(-7.8, 0.01, 1.55), 
-    new THREE.Vector3(2.96, 0.01, 1.72),
+    new THREE.Vector3(-7.80, 0.01, 0.96),
+    new THREE.Vector3(2.90, 0.01, 0.96),
+    new THREE.Vector3(2.90, 0.01, 0.5),
   ],
 };
 

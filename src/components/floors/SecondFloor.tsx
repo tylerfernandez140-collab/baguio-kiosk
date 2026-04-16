@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 import SecondFloorBase, { FloorBaseProps } from './components/SecondFloorBase';
+import { useKiosk } from '../../context/KioskContext';
+import { getKioskSettings } from '../../config/kioskConfig';
 
 // Comprehensive labels for all detected second floor office meshes
 export const secondFloorLabels: Record<string, string> = {
@@ -328,9 +330,18 @@ const secondFloorPaths: Record<string, THREE.Vector3[]> = {
 };
 
 
+const secondFloorPathsKiosk2: Record<string, THREE.Vector3[]> = {
+  ...secondFloorPaths
+};
+
 export default function SecondFloor(
   props: Omit<FloorBaseProps, 'floorId' | 'url' | 'labels' | 'offset'>
 ) {
+  const { kioskId } = useKiosk();
+  const settings = getKioskSettings(kioskId);
+
+  const paths = kioskId === 'kiosk_2' ? secondFloorPathsKiosk2 : secondFloorPaths;
+
   return (
     <SecondFloorBase
       floorId="second"
@@ -338,7 +349,7 @@ export default function SecondFloor(
       offset={[0, 0, 0]}
       labels={secondFloorLabels}
       labelSize={6}
-      predefinedPaths={secondFloorPaths}
+      predefinedPaths={settings.showPaths ? paths : {}}
       customLabelPositions={{
         CANTEEN: [-8.56, 0.03, -1.56]
       }}
