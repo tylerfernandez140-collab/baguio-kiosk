@@ -13,7 +13,7 @@ import BasementFloor from './floors/BasementFloor';
 
 // Preload all 3D models
 useGLTF.preload('/models/first_floor.glb');
-useGLTF.preload('/models/second_floor.glb');
+useGLTF.preload('/models/sekand_floor.glb');
 useGLTF.preload('/models/attic.glb');
 useGLTF.preload('/models/basement.glb');
 
@@ -29,7 +29,7 @@ const floors = [
   {
     id: 'second',
     name: 'SECOND FLOOR',
-    model: '/models/second_floor.glb',
+    model: '/models/sekand_floor.glb',
     description: 'City Council & Chambers',
     offset: [0, 0, 0],
   },

@@ -353,7 +353,7 @@ export default function SecondFloor(
   return (
     <SecondFloorBase
       floorId="second"
-      url="/models/second_floor.glb"
+      url="/models/sekand_floor.glb"
       offset={[0, 0, 0]}
       labels={secondFloorLabels}
       labelSize={6}
