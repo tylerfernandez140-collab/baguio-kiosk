@@ -1,15 +1,15 @@
-import { useState, useRef, Suspense, useEffect } from 'react';
+import { useState, useRef, Suspense, useEffect, useMemo } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Stage, useGLTF, Html } from '@react-three/drei';
-import { Map, Building, Users, FileText, Calendar, Phone, Info, Home, AlertTriangle } from 'lucide-react';
+import { Map, Building, Users, FileText, Calendar, Phone, Info, Home, AlertTriangle, Search, X } from 'lucide-react';
 import { useKiosk } from '@/context/KioskContext';
 import ErrorBoundary from './ErrorBoundary';
 import * as THREE from 'three';
 
-import FirstFloor from './floors/FirstFloor';
-import SecondFloor from './floors/SecondFloor';
-import ThirdFloor from './floors/ThirdFloor';
-import BasementFloor from './floors/BasementFloor';
+import FirstFloor, { firstFloorLabels } from './floors/FirstFloor';
+import SecondFloor, { secondFloorLabels } from './floors/SecondFloor';
+import ThirdFloor, { thirdFloorLabels } from './floors/ThirdFloor';
+import BasementFloor, { basementFloorLabels } from './floors/BasementFloor';
 
 // Preload all 3D models
 useGLTF.preload('/models/first_floor.glb');
@@ -80,14 +80,9 @@ function LoadingFallback() {
 
 // City Hall Services Categories
 const categories = [
-  { id: 'maps', name: 'Directory', icon: Map },
-  { id: 'offices', name: 'Offices', icon: Building },
-  { id: 'services', name: 'Services', icon: Users },
-  { id: 'documents', name: 'Documents', icon: FileText },
-  { id: 'events', name: 'Events', icon: Calendar },
-  { id: 'contacts', name: 'Contacts', icon: Phone },
-  { id: 'info', name: 'Information', icon: Info },
   { id: 'home', name: 'Home', icon: Home },
+  { id: 'maps', name: 'Directory', icon: Map },
+  { id: 'info', name: 'Info', icon: Info },
 ];
 
 interface CityHallDirectoryProps {
@@ -95,12 +90,32 @@ interface CityHallDirectoryProps {
 }
 
 const CityHallDirectory = ({ onNavigate }: CityHallDirectoryProps) => {
-  const { language, theme, selectedFloor, setSelectedFloor } = useKiosk();
+  const { language, theme, selectedFloor, setSelectedFloor, startNavigation } = useKiosk();
   const [selectedCategory, setSelectedCategory] = useState('maps');
   const [autoRotate, setAutoRotate] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout>();
   const interactionTimeoutRef = useRef<NodeJS.Timeout>();
   const controlsRef = useRef<any>(null);
+
+  const allOffices = useMemo(() => [
+    ...Object.entries(basementFloorLabels).map(([id, name]) => ({ id, name, floor: 'basement', floorName: 'Basement' })),
+    ...Object.entries(firstFloorLabels).map(([id, name]) => ({ id, name, floor: 'first', floorName: 'First Floor' })),
+    ...Object.entries(secondFloorLabels).map(([id, name]) => ({ id, name, floor: 'second', floorName: 'Second Floor' })),
+    ...Object.entries(thirdFloorLabels).map(([id, name]) => ({ id, name, floor: 'third', floorName: 'Third Floor' })),
+  ], []);
+
+  const filteredOffices = allOffices.filter(office =>
+    office.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const handleOfficeSelect = (office: typeof allOffices[0]) => {
+    setSelectedFloor(office.floor);
+    startNavigation(office.floor, office.id);
+    setIsSearchOpen(false);
+    setSearchQuery('');
+  };
 
   const currentFloor = floors.find(f => f.id === selectedFloor);
 
@@ -245,16 +260,16 @@ const CityHallDirectory = ({ onNavigate }: CityHallDirectoryProps) => {
                   adjustCamera={false}
                 >
                   {currentFloor?.id === 'first' && (
-                    <FirstFloor />
+                    <FirstFloor hideLabels={isSearchOpen} />
                   )}
                   {currentFloor?.id === 'second' && (
-                    <SecondFloor />
+                    <SecondFloor hideLabels={isSearchOpen} />
                   )}
                   {currentFloor?.id === 'third' && (
-                    <ThirdFloor />
+                    <ThirdFloor hideLabels={isSearchOpen} />
                   )}
                   {currentFloor?.id === 'basement' && (
-                    <BasementFloor />
+                    <BasementFloor hideLabels={isSearchOpen} />
                   )}
                 </Stage>
                 <OrbitControls 
@@ -272,6 +287,7 @@ const CityHallDirectory = ({ onNavigate }: CityHallDirectoryProps) => {
                   zoomSpeed={1}
                   rotateSpeed={1}
                   target={[0, 1, 0]}
+                  maxPolarAngle={Math.PI / 2}
                   makeDefault
                 />
               </Suspense>
@@ -283,6 +299,68 @@ const CityHallDirectory = ({ onNavigate }: CityHallDirectoryProps) => {
             <h2 className="text-2xl font-bold text-gray-800 dark:text-white">
               {currentFloor?.name}
             </h2>
+          </div>
+
+          {/* Search Bar / Modal in Upper Right */}
+          <div className="absolute top-8 right-8 z-50">
+            {!isSearchOpen ? (
+              <button
+                onClick={() => setIsSearchOpen(true)}
+                className="bg-white/90 hover:bg-white dark:bg-gray-800/90 dark:hover:bg-gray-800 p-4 rounded-full shadow-lg transition-all transform hover:scale-110 text-green-600"
+              >
+                <Search className="w-6 h-6" />
+              </button>
+            ) : (
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-4 w-80 max-h-[70vh] flex flex-col border border-gray-100 dark:border-gray-700">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      autoFocus
+                      type="text"
+                      placeholder="Search first floor offices..."
+                      className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-gray-900 border-none rounded-xl text-sm focus:ring-2 focus:ring-green-500"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                  </div>
+                  <button
+                    onClick={() => {
+                      setIsSearchOpen(false);
+                      setSearchQuery('');
+                    }}
+                    className="ml-2 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+                  >
+                    <X className="w-5 h-5 text-gray-500" />
+                  </button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto custom-scrollbar">
+                  {filteredOffices.length > 0 ? (
+                    <div className="space-y-1">
+                      {filteredOffices.map((office) => (
+                        <button
+                          key={`${office.floor}-${office.id}`}
+                          onClick={() => handleOfficeSelect(office)}
+                          className="w-full text-left px-4 py-3 rounded-xl hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors group"
+                        >
+                          <div className="text-sm font-semibold text-gray-700 dark:text-gray-200 group-hover:text-green-600 transition-colors truncate">
+                            {office.name.replace(/\n/g, ' ')}
+                          </div>
+                          <div className="text-[10px] text-gray-400 uppercase tracking-wider">
+                            {office.floorName}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="py-8 text-center text-gray-500 text-sm">
+                      No offices found
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

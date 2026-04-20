@@ -343,6 +343,7 @@ export interface FloorBaseProps {
   predefinedPaths?: Record<string, THREE.Vector3[]>;
   labelSize?: number;
   customLabelPositions?: Record<string, [number, number, number]>;
+  hideLabels?: boolean;
 }
 
 export default function FloorBase({
@@ -354,6 +355,7 @@ export default function FloorBase({
   predefinedPaths = {},
   labelSize = 5,
   customLabelPositions = {},
+  hideLabels = false,
 }: FloorBaseProps) {
   const { navigation, startNavigation, clearNavigation } = useKiosk();
   const [officeMarkers, setOfficeMarkers] = useState<{ name: string; position: THREE.Vector3 }[]>([]);
@@ -442,7 +444,7 @@ export default function FloorBase({
         onLoadMarkers={setOfficeMarkers}
       />
       
-      {officeMarkers.map((office, index) => (
+      {!hideLabels && officeMarkers.map((office, index) => (
         <Html
           key={`${url}-label-${index}`}
           position={
@@ -471,7 +473,7 @@ export default function FloorBase({
         </Html>
       ))}
       
-      {selectedOffice && (
+      {!hideLabels && selectedOffice && (
         <Html
           position={[
             selectedOffice.position.x,
