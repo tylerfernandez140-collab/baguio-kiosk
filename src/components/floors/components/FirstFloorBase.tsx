@@ -380,8 +380,29 @@ export default function FloorBase({
       }
     } else if (floorId === 'first') {
       // If we are on first floor and target is elsewhere, show stairs or entrance
-      if (navigation.floorId === 'basement' && predefinedPaths['entrance']) {
-        setActivePath(predefinedPaths['entrance']);
+      if (navigation.floorId === 'basement') {
+        // Offices that use the left stairs
+        const leftSideOffices = ['daycare', 'sports', 'lounge', 'kit'];
+        const targetOffice = navigation.officeId.toLowerCase().replace(/[^a-z]/g, '');
+        
+        if (leftSideOffices.includes(targetOffice)) {
+          if (predefinedPaths['stairs_basement_left']) {
+            setActivePath(predefinedPaths['stairs_basement_left']);
+          } else {
+            setActivePath(null);
+          }
+        } else {
+          // Prefer a specific stairs path to basement if it exists
+          if (predefinedPaths['stairs_basement']) {
+            setActivePath(predefinedPaths['stairs_basement']);
+          } else if (predefinedPaths['entrance']) {
+            setActivePath(predefinedPaths['entrance']);
+          } else if (predefinedPaths['stairs']) {
+            setActivePath(predefinedPaths['stairs']);
+          } else {
+            setActivePath(null);
+          }
+        }
       } else if (predefinedPaths['stairs']) {
         setActivePath(predefinedPaths['stairs']);
       } else {

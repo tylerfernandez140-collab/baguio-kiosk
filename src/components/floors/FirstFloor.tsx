@@ -175,6 +175,13 @@ const firstFloorPaths: Record<string, THREE.Vector3[]> = {
     new THREE.Vector3(2.96, 0.01, 1.72),
     new THREE.Vector3(2.96, 0.01, 0.5),
   ],
+  stairs_basement_left: [
+    new THREE.Vector3(2.40, 0.01, 1.74), 
+    new THREE.Vector3(2.90, 0.01, 1.74),
+    new THREE.Vector3(2.90, 0.01, 0.96),
+    new THREE.Vector3(-5.75, 0.01, 0.96),
+    new THREE.Vector3(-5.75, 0.01, 0.74), 
+  ],
   entrance: [
     new THREE.Vector3(2.40, 0.01, 1.74), 
     new THREE.Vector3(2.90, 0.01, 1.74),
@@ -294,6 +301,14 @@ const firstFloorPathsKiosk2: Record<string, THREE.Vector3[]> = {
     new THREE.Vector3(-7.80, 0.01, 0.96),
     new THREE.Vector3(2.90, 0.01, 0.96),
     new THREE.Vector3(2.90, 0.01, 0.5),
+  ],
+  stairs_basement: [
+    new THREE.Vector3(-7.8, 0.01, 1.55), 
+    new THREE.Vector3(-7.8, 0.01, 2.50),
+  ],
+  stairs_basement_left: [
+    new THREE.Vector3(-7.8, 0.01, 1.55), 
+    new THREE.Vector3(-7.8, 0.01, 2.50),
   ],
   entrance: [
     new THREE.Vector3(-7.8, 0.01, 1.55), 
