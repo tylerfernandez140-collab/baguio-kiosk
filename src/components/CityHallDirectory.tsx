@@ -210,7 +210,7 @@ const CityHallDirectory = ({ onNavigate }: CityHallDirectoryProps) => {
             </div>
           }>
             <Canvas 
-              camera={{ position: [0, 8, 15], fov: 45, near: 0.1, far: 1000 }}
+              camera={{ position: [0, 15, 0], fov: 45, near: 0.1, far: 1000 }}
               gl={{ 
                 antialias: true,
                 alpha: false,
