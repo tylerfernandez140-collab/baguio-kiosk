@@ -212,8 +212,7 @@ function CoordinateDetector() {
 
       const intersects = raycaster.intersectObjects(scene.children, true);
       const floorIntersect = intersects.find(intersect => {
-        const name = intersect.object.name.toLowerCase();
-        return name.includes('floor') || name.includes('ground') || name.includes('base') || name.includes('slab') || name.includes('plane');
+        return true;
       });
 
       if (floorIntersect) {
