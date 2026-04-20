@@ -399,7 +399,15 @@ export default function FloorBase({
       }
     } else if (floorId === 'second' && navigation.floorId === 'third') {
       // If we are on second floor and target is third floor, show stairs
-      if (predefinedPaths['stairs']) {
+      if (navigation.officeId === 'city__human_resource__management') {
+          if (predefinedPaths['stairs_hr']) {
+            setActivePath(predefinedPaths['stairs_hr']);
+          } else if (predefinedPaths['stairs']) {
+            setActivePath(predefinedPaths['stairs']);
+          } else {
+            setActivePath(null);
+          }
+      } else if (predefinedPaths['stairs']) {
         setActivePath(predefinedPaths['stairs']);
       } else {
         setActivePath(null);

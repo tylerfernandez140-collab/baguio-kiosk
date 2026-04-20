@@ -19,36 +19,21 @@ export const thirdFloorLabels: Record<string, string> = {
 
 // You can use the Coordinate Detector on the screen to fine-tune these endpoints!
 const thirdFloorPaths: Record<string, THREE.Vector3[]> = {
-  city_mayor_office: [
-    new THREE.Vector3(2.14, 0.01, -0.14),
-    new THREE.Vector3(2.13, 0.01, 1.04),
-    new THREE.Vector3(0.00, 0.01, 1.04),
-  ],
-  city_assessors_office: [
-    new THREE.Vector3(2.14, 0.01, -0.14),
-    new THREE.Vector3(2.13, 0.01, 1.04),
-    new THREE.Vector3(4.00, 0.01, 1.04),
-  ],
+
+
   city__human_resource__management: [
-    new THREE.Vector3(2.14, 0.01, -0.14),
-    new THREE.Vector3(2.13, 0.01, 1.04),
-    new THREE.Vector3(6.00, 0.01, 1.04),
+    new THREE.Vector3(-0.95, 0.01, 0.66),
+    new THREE.Vector3(-0.95, 0.1, 1.40),
+    new THREE.Vector3(-0.6, 0.1, 1.40),
+    new THREE.Vector3(-0.6, 0.5, 0.75),
   ],
   multipurpose_hall: [
     new THREE.Vector3(-5.37, 0.01, -2.75),
     new THREE.Vector3(-5.37, 0.5, -0.15),
     new THREE.Vector3(-5.65, 0.5, -0.15),
   ],
-  center: [
-    new THREE.Vector3(2.14, 0.01, -0.14),
-    new THREE.Vector3(2.13, 0.01, 1.04),  
-    new THREE.Vector3(2.13, 0.01, 3.00),
-  ],
-  plane: [
-    new THREE.Vector3(2.14, 0.01, -0.14),
-    new THREE.Vector3(2.13, 0.01, 1.04),
-    new THREE.Vector3(2.13, 0.01, -2.00),
-  ],
+
+
 };
 
 const thirdFloorPathsKiosk2: Record<string, THREE.Vector3[]> = {
