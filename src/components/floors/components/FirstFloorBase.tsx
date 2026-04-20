@@ -380,8 +380,10 @@ export default function FloorBase({
         setActivePath(null);
       }
     } else if (floorId === 'first') {
-      // If we are on first floor and target is elsewhere, show stairs
-      if (predefinedPaths['stairs']) {
+      // If we are on first floor and target is elsewhere, show stairs or entrance
+      if (navigation.floorId === 'basement' && predefinedPaths['entrance']) {
+        setActivePath(predefinedPaths['entrance']);
+      } else if (predefinedPaths['stairs']) {
         setActivePath(predefinedPaths['stairs']);
       } else {
         setActivePath(null);
