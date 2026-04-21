@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
-import { Html, useGLTF, Line } from '@react-three/drei';
+import { Html, useGLTF } from '@react-three/drei';
 import { useThree, useFrame } from '@react-three/fiber';
 import { useKiosk } from '../../../context/KioskContext';
+import CameraAnimation from '../../CameraAnimation';
 
 // 3D Model Component with proper material handling and centering
 function Model({
@@ -250,10 +251,9 @@ function CoordinateDetector() {
 }
 
 function AnimatedPath({ points }: { points: THREE.Vector3[] }) {
-  const [arrows, setArrows] = useState<{ position: THREE.Vector3; rotation: THREE.Euler }[]>([]);
-  const lineRef = useRef<any>(null);
+  const [arrows, setArrows] = useState<{ position: THREE.Vector3; rotation: THREE.Euler; opacity: number }[]>([]);
   
-  // Calculate segments and total length
+  // Calculate straight-line segments (L-shaped corners)
   const segments = useMemo(() => {
     const segs = [];
     for (let i = 0; i < points.length - 1; i++) {
@@ -262,8 +262,9 @@ function AnimatedPath({ points }: { points: THREE.Vector3[] }) {
       const length = start.distanceTo(end);
       const direction = new THREE.Vector3().subVectors(end, start).normalize();
       
-      // Calculate rotation for arrows
-      const rotation = new THREE.Euler(0, Math.atan2(direction.x, direction.z) + Math.PI / 2, 0);
+      // Calculate rotation for arrows - point along the path direction
+      const angle = Math.atan2(direction.x, direction.z);
+      const rotation = new THREE.Euler(0, angle, 0);
       
       segs.push({ start, end, length, direction, rotation });
     }
@@ -274,28 +275,41 @@ function AnimatedPath({ points }: { points: THREE.Vector3[] }) {
 
   useFrame((state) => {
     const time = state.clock.getElapsedTime();
-    const arrowCount = Math.max(5, Math.floor(totalLength * 3)); // 3 arrows per unit length
-    const speed = 1.5;
+    const arrowSpacing = 0.8; // Fixed distance between arrows
+    const speed = 1.5; // Slow speed for better readability
+    const fadeInDistance = 0.3; // Distance from start to fade in
+    
+    // Calculate how many arrows fit along the path
+    const arrowCount = Math.max(3, Math.floor(totalLength / arrowSpacing));
     
     const newArrows = [];
     for (let i = 0; i < arrowCount; i++) {
-      // Progress from 0 to 1, offset by time and index
-      const progress = ((time * speed + (i / arrowCount) * totalLength) % totalLength) / totalLength;
-      const targetDist = progress * totalLength;
+      // Calculate base position with fixed spacing
+      const baseDist = i * arrowSpacing;
+      // Add flowing animation
+      const animatedDist = (baseDist + time * speed) % (totalLength + fadeInDistance);
+      
+      // Map fade-in zone back to start of path with fade effect
+      let targetDist = animatedDist;
+      let opacity = 1;
+      
+      if (animatedDist > totalLength) {
+        // In fade-in zone - map to start and calculate fade opacity
+        targetDist = animatedDist - totalLength;
+        opacity = Math.min(1, targetDist / fadeInDistance);
+      }
       
       // Find which segment the arrow is in
       let currentDist = 0;
-      let found = false;
       for (const seg of segments) {
         if (targetDist >= currentDist && targetDist <= currentDist + seg.length) {
           const segProgress = (targetDist - currentDist) / seg.length;
           const pos = new THREE.Vector3().lerpVectors(seg.start, seg.end, segProgress);
           
-          // Lift arrow slightly above the line
+          // Lift arrow slightly above ground
           pos.y += 0.05;
           
-          newArrows.push({ position: pos, rotation: seg.rotation });
-          found = true;
+          newArrows.push({ position: pos, rotation: seg.rotation, opacity });
           break;
         }
         currentDist += seg.length;
@@ -306,18 +320,29 @@ function AnimatedPath({ points }: { points: THREE.Vector3[] }) {
 
   return (
     <>
-      <Line
-        points={points}
-        color="#3b82f6"
-        lineWidth={6}
-        transparent
-        opacity={0.6}
-      />
       {arrows.map((arrow, i) => (
-        <mesh key={`arrow-${i}`} position={arrow.position} rotation={arrow.rotation}>
-          <coneGeometry args={[0.08, 0.2, 4]} />
-          <meshBasicMaterial color="#ffffff" transparent opacity={0.9} />
-        </mesh>
+        <group key={`arrow-${i}`} position={arrow.position} rotation={[0, arrow.rotation.y, 0]}>
+          {/* Red arrow shaft - flat on ground pointing along Z */}
+          <mesh position={[0, 0.01, 0.1]} rotation={[0, 0, 0]}>
+            <boxGeometry args={[0.06, 0.02, 0.16]} />
+            <meshBasicMaterial color="#dc2626" transparent opacity={0.95 * arrow.opacity} />
+          </mesh>
+          {/* Red arrow head - flat on ground, touching the shaft, pointing forward */}
+          <mesh position={[0, 0.01, 0.18]} rotation={[Math.PI / 2, 0, 0]}>
+            <coneGeometry args={[0.06, 0.12, 3]} />
+            <meshBasicMaterial color="#dc2626" transparent opacity={0.95 * arrow.opacity} />
+          </mesh>
+          
+          {/* Darker red inner arrow */}
+          <mesh position={[0, 0.02, 0.1]}>
+            <boxGeometry args={[0.04, 0.02, 0.14]} />
+            <meshBasicMaterial color="#991b1b" transparent opacity={0.9 * arrow.opacity} />
+          </mesh>
+          <mesh position={[0, 0.02, 0.17]} rotation={[Math.PI / 2, 0, 0]}>
+            <coneGeometry args={[0.04, 0.1, 3]} />
+            <meshBasicMaterial color="#991b1b" transparent opacity={0.9 * arrow.opacity} />
+          </mesh>
+        </group>
       ))}
     </>
   );
@@ -471,7 +496,7 @@ export default function FloorBase({
         </Html>
       ))}
       
-      {!hideLabels && selectedOffice && (
+      {!hideLabels && selectedOffice && !navigation?.isActive && (
         <Html
           position={[
             selectedOffice.position.x,
@@ -503,6 +528,14 @@ export default function FloorBase({
       {activePath && (
         <AnimatedPath points={activePath} />
       )}
+      
+      {/* Camera Animation - follows the active path during navigation */}
+      <CameraAnimation 
+        path={activePath || undefined}
+        enabled={!!navigation?.isActive}
+        animationDuration={2000}
+      />
+      
       {children}
       <CoordinateDetector />
     </>

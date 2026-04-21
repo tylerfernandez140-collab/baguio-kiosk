@@ -1,9 +1,37 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { initialFloorLabels } from '@/data/floorLabels';
 import { supabase } from '@/lib/supabase';
+import { getKioskSettings } from '../config/kioskConfig';
 
 type Language = 'en' | 'fil';
 type Theme = 'day' | 'night';
+
+export interface NavigationStep {
+  id: string;
+  type: 'walk' | 'stairs' | 'elevator' | 'floor_change' | 'arrived';
+  description: string;
+  descriptionFil: string;
+  floorId: string;
+  targetPosition?: { x: number; y: number; z: number };
+  completed: boolean;
+}
+
+export interface NavigationState {
+  floorId: string;
+  officeId: string;
+  officeName: string;
+  steps: NavigationStep[];
+  currentStepIndex: number;
+  isActive: boolean;
+  isTransitioning: boolean;
+}
+
+interface CameraAnimationState {
+  isAnimating: boolean;
+  targetPosition: { x: number; y: number; z: number } | null;
+  lookAtPosition: { x: number; y: number; z: number } | null;
+  progress: number;
+}
 
 interface KioskContextType {
   language: Language;
@@ -15,13 +43,21 @@ interface KioskContextType {
   kioskId: string;
   selectedFloor: string;
   setSelectedFloor: (floor: string) => void;
-  navigation: { floorId: string; officeId: string } | null;
-  startNavigation: (floorId: string, officeId: string) => void;
+  navigation: NavigationState | null;
+  startNavigation: (floorId: string, officeId: string, officeName?: string) => void;
   clearNavigation: () => void;
   labels: Record<string, Record<string, string>>;
   updateLabel: (floorId: string, labelKey: string, newValue: string) => void;
   offices: any[];
   refreshOffices: () => Promise<void>;
+  goToNextStep: () => void;
+  completeCurrentStep: () => void;
+  startFloorTransition: () => void;
+  endFloorTransition: () => void;
+  cameraAnimation: CameraAnimationState;
+  setCameraAnimation: (state: CameraAnimationState) => void;
+  startCameraAnimation: (targetPos: { x: number; y: number; z: number }, lookAtPos: { x: number; y: number; z: number }) => void;
+  stopCameraAnimation: () => void;
 }
 
 const KioskContext = createContext<KioskContextType | null>(null);
@@ -86,7 +122,13 @@ export const KioskProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   });
 
   const [selectedFloor, setSelectedFloor] = useState('first');
-  const [navigation, setNavigation] = useState<{ floorId: string; officeId: string } | null>(null);
+  const [navigation, setNavigation] = useState<NavigationState | null>(null);
+  const [cameraAnimation, setCameraAnimation] = useState<CameraAnimationState>({
+    isAnimating: false,
+    targetPosition: null,
+    lookAtPosition: null,
+    progress: 0,
+  });
   const [labels, setLabels] = useState(initialFloorLabels);
   const [offices, setOffices] = useState<any[]>([]);
 
@@ -187,36 +229,192 @@ export const KioskProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  const startNavigation = (floorId: string, officeId: string) => {
-    // 1. Clear any existing navigation
-    setNavigation(null);
-    
-    // 2. Start from first floor to show line to stairs
-    setSelectedFloor('first');
-    setNavigation({ floorId, officeId });
+  // Generate navigation steps based on start and end locations
+  const generateNavigationSteps = (
+    startFloor: string,
+    targetFloor: string,
+    officeId: string,
+    officeName: string,
+    kioskId: string
+  ): NavigationStep[] => {
+    const steps: NavigationStep[] = [];
+    let stepId = 0;
 
-    // 3. If target is on another floor, sequence the transitions
-    if (floorId === 'third') {
-      setTimeout(() => {
-        setSelectedFloor('second');
-        setTimeout(() => {
-          setSelectedFloor('third');
-        }, 1000);
-      }, 1000);
-    } else if (floorId !== 'first') {
-      setTimeout(() => {
-        setSelectedFloor(floorId);
-      }, 1000);
+    // Step 1: Start from current position
+    steps.push({
+      id: `step-${stepId++}`,
+      type: 'walk',
+      description: `Start from your current location`,
+      descriptionFil: `Magsimula sa iyong kasalukuyang lokasyon`,
+      floorId: startFloor,
+      completed: false,
+    });
+
+    // If target is on a different floor, add stairs/transition steps
+    if (targetFloor !== startFloor) {
+      const floorNames: Record<string, string> = {
+        basement: 'Basement',
+        first: 'First Floor',
+        second: 'Second Floor',
+        third: 'Third Floor',
+      };
+
+      // Step 2: Walk to stairs
+      steps.push({
+        id: `step-${stepId++}`,
+        type: 'walk',
+        description: `Follow the path to the stairs`,
+        descriptionFil: `Sundin ang daan patungo sa hagdan`,
+        floorId: startFloor,
+        targetPosition: { x: 2.96, y: 0.5, z: 0.5 }, // Stairs position
+        completed: false,
+      });
+
+      // Step 3: Go up/down stairs
+      const direction = targetFloor === 'basement' ? 'down' : 'up';
+      steps.push({
+        id: `step-${stepId++}`,
+        type: 'stairs',
+        description: `Go ${direction} the stairs to ${floorNames[targetFloor]}`,
+        descriptionFil: `Bumaba/pumunta pababa/paakyat sa hagdan patungo sa ${floorNames[targetFloor]}`,
+        floorId: startFloor,
+        completed: false,
+      });
+
+      // Step 4: Floor transition
+      steps.push({
+        id: `step-${stepId++}`,
+        type: 'floor_change',
+        description: `Entering ${floorNames[targetFloor]}`,
+        descriptionFil: `Papasok sa ${floorNames[targetFloor]}`,
+        floorId: targetFloor,
+        completed: false,
+      });
+
+      // Step 5: Continue from stairs entrance
+      steps.push({
+        id: `step-${stepId++}`,
+        type: 'walk',
+        description: `Continue from the stairs entrance`,
+        descriptionFil: `Magpatuloy mula sa pasukan ng hagdan`,
+        floorId: targetFloor,
+        completed: false,
+      });
     }
+
+    // Final step: Arrive at destination
+    steps.push({
+      id: `step-${stepId++}`,
+      type: 'arrived',
+      description: `You have arrived at ${officeName}`,
+      descriptionFil: `Nakarating ka na sa ${officeName}`,
+      floorId: targetFloor,
+      completed: false,
+    });
+
+    return steps;
   };
 
-  const clearNavigation = () => setNavigation(null);
+  const startNavigation = (floorId: string, officeId: string, officeName?: string) => {
+    const targetOfficeName = officeName || officeId;
+    
+    // Generate navigation steps
+    const steps = generateNavigationSteps('first', floorId, officeId, targetOfficeName, kioskId);
+    
+    // Create navigation state
+    const newNavigation: NavigationState = {
+      floorId,
+      officeId,
+      officeName: targetOfficeName,
+      steps,
+      currentStepIndex: 0,
+      isActive: true,
+      isTransitioning: false,
+    };
+
+    // Clear any existing navigation and start fresh
+    setNavigation(null);
+    setSelectedFloor('first');
+    
+    // Small delay to ensure clean state
+    setTimeout(() => {
+      setNavigation(newNavigation);
+      
+      // Start camera animation from "You Are Here" position
+      const settings = getKioskSettings(kioskId);
+      const startPos = settings.firstFloorPosition;
+      
+      // Calculate first target (usually the hallway or first waypoint)
+      const firstStep = steps[0];
+      if (firstStep) {
+        startCameraAnimation(
+          { x: startPos[0], y: startPos[1] + 2, z: startPos[2] },
+          { x: startPos[0], y: 0, z: startPos[2] - 2 }
+        );
+      }
+    }, 100);
+  };
+
+  const clearNavigation = () => {
+    setNavigation(null);
+    stopCameraAnimation();
+  };
+
+  const goToNextStep = () => {
+    setNavigation(prev => {
+      if (!prev) return null;
+      const newIndex = Math.min(prev.currentStepIndex + 1, prev.steps.length - 1);
+      return { ...prev, currentStepIndex: newIndex };
+    });
+  };
+
+  const completeCurrentStep = () => {
+    setNavigation(prev => {
+      if (!prev) return null;
+      const updatedSteps = [...prev.steps];
+      if (updatedSteps[prev.currentStepIndex]) {
+        updatedSteps[prev.currentStepIndex] = {
+          ...updatedSteps[prev.currentStepIndex],
+          completed: true,
+        };
+      }
+      return { ...prev, steps: updatedSteps };
+    });
+  };
+
+  const startFloorTransition = () => {
+    setNavigation(prev => prev ? { ...prev, isTransitioning: true } : null);
+  };
+
+  const endFloorTransition = () => {
+    setNavigation(prev => prev ? { ...prev, isTransitioning: false } : null);
+  };
+
+  const startCameraAnimation = (targetPos: { x: number; y: number; z: number }, lookAtPos: { x: number; y: number; z: number }) => {
+    setCameraAnimation({
+      isAnimating: true,
+      targetPosition: targetPos,
+      lookAtPosition: lookAtPos,
+      progress: 0,
+    });
+  };
+
+  const stopCameraAnimation = () => {
+    setCameraAnimation({
+      isAnimating: false,
+      targetPosition: null,
+      lookAtPosition: null,
+      progress: 0,
+    });
+  };
 
   return (
     <KioskContext.Provider value={{ 
       language, setLanguage, theme, toggleTheme, resetIdleTimer, isIdle, kioskId,
       selectedFloor, setSelectedFloor, navigation, startNavigation, clearNavigation,
-      labels, updateLabel, offices, refreshOffices: fetchOffices
+      labels, updateLabel, offices, refreshOffices: fetchOffices,
+      goToNextStep, completeCurrentStep, startFloorTransition, endFloorTransition,
+      cameraAnimation, setCameraAnimation, startCameraAnimation, stopCameraAnimation
     }}>
       {children}
     </KioskContext.Provider>

@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { Html, useGLTF, Line } from '@react-three/drei';
 import { useThree, useFrame } from '@react-three/fiber';
 import { useKiosk } from '../../../context/KioskContext';
+import CameraAnimation from '../../CameraAnimation';
 
 // 3D Model Component with proper material handling and centering
 function Model({
@@ -508,6 +509,14 @@ export default function FloorBase({
       {activePath && (
         <AnimatedPath points={activePath} />
       )}
+      
+      {/* Camera Animation - follows the active path during navigation */}
+      <CameraAnimation 
+        path={activePath || undefined}
+        enabled={!!navigation?.isActive}
+        animationDuration={2000}
+      />
+      
       {children}
       <CoordinateDetector />
     </>

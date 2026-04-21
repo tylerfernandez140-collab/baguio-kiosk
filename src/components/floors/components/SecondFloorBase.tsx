@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { Html, useGLTF, Line } from '@react-three/drei';
 import { useThree, useFrame } from '@react-three/fiber';
 import { useKiosk } from '../../../context/KioskContext';
+import CameraAnimation from '../../CameraAnimation';
 
 // 3D Model Component with proper material handling and centering
 function Model({
@@ -381,11 +382,25 @@ export default function FloorBase({
     }
 
     if (navigation.floorId === floorId) {
+      // Check if we came from another floor (stairs/floor_change step completed)
+      const cameFromOtherFloor = navigation.steps.some(
+        step => (step.type === 'stairs' || step.type === 'floor_change') && step.completed
+      );
+      
       // Find matching path on the current floor
       const normalizedName = navigation.officeId.toLowerCase();
-      const pathKey = Object.keys(predefinedPaths).find(key => 
+      let pathKey = Object.keys(predefinedPaths).find(key => 
         key.toLowerCase() === normalizedName
       );
+      
+      // If coming from another floor, try to use stairs-entry path first
+      if (cameFromOtherFloor) {
+        const stairsKey = `from_stairs_${normalizedName.toUpperCase()}`;
+        if (predefinedPaths[stairsKey]) {
+          pathKey = stairsKey;
+        }
+      }
+      
       if (pathKey) {
         setActivePath(predefinedPaths[pathKey]);
       } else {
@@ -506,6 +521,14 @@ export default function FloorBase({
       {activePath && (
         <AnimatedPath points={activePath} />
       )}
+      
+      {/* Camera Animation - follows the active path during navigation */}
+      <CameraAnimation 
+        path={activePath || undefined}
+        enabled={!!navigation?.isActive}
+        animationDuration={2000}
+      />
+      
       {children}
       <CoordinateDetector />
     </>
