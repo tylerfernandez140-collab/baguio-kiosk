@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/use-auth';
 import { useKiosk } from '@/context/KioskContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { LayoutDashboard, Users, Settings, LogOut, ChevronRight, Loader2, Search, Edit2, Check, X, Building } from 'lucide-react';
+import { LayoutDashboard, Users, Settings, LogOut, ChevronRight, Loader2, Search, Edit2, Check, X, Building, RotateCcw, Upload, Image as ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { cityHallFloors, Office } from '@/data/kioskData';
@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Progress } from '@/components/ui/progress';
 import { 
   Table, 
   TableBody, 
@@ -23,33 +24,45 @@ import {
 
 const Admin = () => {
   const { user, loading } = useAuth();
-  const { labels, updateLabel } = useKiosk();
+  const { labels, updateLabel, offices, refreshOffices } = useKiosk();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [offices, setOffices] = useState<Office[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingLabelKey, setEditingLabelKey] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [localOffices, setLocalOffices] = useState<any[]>([]);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [uploadingStatus, setUploadingStatus] = useState<Record<string, number>>({});
 
   useEffect(() => {
     fetchOffices();
-  }, []);
+  }, [user]);
 
   const fetchOffices = async () => {
+    if (!user) return;
+    setIsRefreshing(true);
     const { data, error } = await supabase
       .from('offices')
-      .select('*')
-      .order('floor_id', { ascending: true })
-      .order('name', { ascending: true });
+      .select('*');
 
     if (error) {
       console.error('Error fetching offices:', error);
-      toast.error('Failed to load offices');
+      toast.error(`Database Error: ${error.message}`);
     } else {
-      setOffices(data || []);
+      console.log('Fetched offices:', data);
+      setLocalOffices(data || []);
     }
+    setIsRefreshing(false);
+    refreshOffices(); // Also refresh context
   };
+
+  // Keep local offices in sync with context offices for editing
+  useEffect(() => {
+    if (offices.length > 0 && !isRefreshing) {
+      setLocalOffices(offices);
+    }
+  }, [offices, isRefreshing]);
 
   const handleDeleteOffice = async (id: string) => {
     if (!confirm('Are you sure you want to remove this office from the directory? (The map label will remain)')) return;
@@ -63,30 +76,36 @@ const Admin = () => {
       toast.error('Failed to delete office');
     } else {
       toast.success('Office removed from directory');
-      fetchOffices();
+      refreshOffices();
     }
   };
 
   const handleAddOffice = async (floorId: string, name: string) => {
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('offices')
       .insert({
         floor_id: floorId,
         name: name,
         description: '',
         officer: ''
-      });
+      })
+      .select();
 
     if (error) {
       toast.error('Failed to add office');
     } else {
-      toast.success('Office added to directory');
-      fetchOffices();
+      toast.success('Office registered in directory');
+      if (data && data[0]) {
+        await refreshOffices();
+        setEditingId(data[0].id);
+      } else {
+        refreshOffices();
+      }
     }
   };
 
   const handleSaveEdit = async (id: string) => {
-    const officeToUpdate = offices.find(off => off.id === id);
+    const officeToUpdate = displayOffices.find(off => off.id === id);
     if (!officeToUpdate) return;
 
     const { error } = await supabase
@@ -113,10 +132,73 @@ const Admin = () => {
     toast.success('3D Map Label updated successfully');
   };
 
-  const filteredOffices = offices.filter(off => 
-    off.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    (off.officer && off.officer.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const displayOffices = localOffices.length > 0 ? localOffices : offices;
+
+  const filteredOffices = useMemo(() => {
+    return displayOffices.filter(off => 
+      String(off.name).toLowerCase().includes(searchQuery.toLowerCase()) || 
+      (off.officer && String(off.officer).toLowerCase().includes(searchQuery.toLowerCase()))
+    );
+  }, [displayOffices, searchQuery]);
+
+  const handleImageUpload = async (file: File, officeId: string) => {
+    try {
+      // Check file size (limit to 1MB for database storage)
+      if (file.size > 1024 * 1024) {
+        toast.error('Image is too large. Please use an image under 1MB.');
+        return null;
+      }
+
+      setUploadingStatus(prev => ({ ...prev, [officeId]: 10 }));
+      
+      const reader = new FileReader();
+      
+      // Wrap FileReader in a promise
+      const base64Data = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = error => reject(error);
+        
+        // Simulate progress for UI feel
+        let progress = 10;
+        const interval = setInterval(() => {
+          progress += 20;
+          if (progress >= 90) clearInterval(interval);
+          setUploadingStatus(prev => ({ ...prev, [officeId]: progress }));
+        }, 50);
+
+        reader.readAsDataURL(file);
+      });
+
+      setUploadingStatus(prev => ({ ...prev, [officeId]: 100 }));
+
+      // Update local state immediately with Base64 data
+      setLocalOffices(prev => 
+        prev.map(off => off.id === officeId ? { ...off, image_url: base64Data } : off)
+      );
+      
+      toast.success('Image processed successfully');
+      
+      // Clear status after a delay
+      setTimeout(() => {
+        setUploadingStatus(prev => {
+          const next = { ...prev };
+          delete next[officeId];
+          return next;
+        });
+      }, 1000);
+
+      return base64Data;
+    } catch (error: any) {
+      setUploadingStatus(prev => {
+        const next = { ...prev };
+        delete next[officeId];
+        return next;
+      });
+      console.error('Processing error:', error);
+      toast.error(`Processing failed: ${error.message}`);
+      return null;
+    }
+  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -186,13 +268,20 @@ const Admin = () => {
                 <p className="text-neutral-400">Here's what's happening with the Baguio City Hall Kiosk.</p>
               </div>
               <div className="flex gap-4">
-                <Button className="bg-neutral-800 hover:bg-neutral-700 border-neutral-700">View Live Kiosk</Button>
+                <Button 
+                  className="bg-neutral-800 hover:bg-neutral-700 border-neutral-700 gap-2"
+                  onClick={fetchOffices}
+                  disabled={isRefreshing}
+                >
+                  {isRefreshing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw size={16} />}
+                  Refresh Data
+                </Button>
                 <Button className="bg-blue-600 hover:bg-blue-500">Add New Entry</Button>
               </div>
             </header>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-              <StatCard title="Total Offices" value={offices.length.toString()} change="+3 this month" />
+              <StatCard title="Total Offices" value={displayOffices.length.toString()} change="+3 this month" />
               <StatCard title="Daily Searches" value="1,284" change="+12% from yesterday" />
               <StatCard title="Active Kiosks" value="8" change="All systems go" />
             </div>
@@ -229,7 +318,7 @@ const Admin = () => {
                 Office Directory Management
               </CardTitle>
               <CardDescription>
-                Linked to 3D Map Labels on your floors. Total database entries: {offices.length}
+                Linked to 3D Map Labels on your floors. Total database entries: {displayOffices.length}
               </CardDescription>
             </div>
           </CardHeader>
@@ -263,10 +352,12 @@ const Admin = () => {
                       floorId="basement"
                       editingId={editingId}
                       setEditingId={setEditingId}
-                      setOffices={setOffices}
+                      setOffices={setLocalOffices}
                       handleSaveEdit={handleSaveEdit}
-                      handleDeleteOffice={handleDeleteOffice}
-                      fetchOffices={fetchOffices}
+                      handleAddOffice={handleAddOffice}
+                      refreshOffices={refreshOffices}
+                      handleImageUpload={handleImageUpload}
+                      uploadingStatus={uploadingStatus}
                       searchQuery={searchQuery}
                       setSearchQuery={setSearchQuery}
                     />
@@ -278,10 +369,12 @@ const Admin = () => {
                       floorId="first"
                       editingId={editingId}
                       setEditingId={setEditingId}
-                      setOffices={setOffices}
+                      setOffices={setLocalOffices}
                       handleSaveEdit={handleSaveEdit}
-                      handleDeleteOffice={handleDeleteOffice}
-                      fetchOffices={fetchOffices}
+                      handleAddOffice={handleAddOffice}
+                      refreshOffices={refreshOffices}
+                      handleImageUpload={handleImageUpload}
+                      uploadingStatus={uploadingStatus}
                       searchQuery={searchQuery}
                       setSearchQuery={setSearchQuery}
                     />
@@ -293,10 +386,12 @@ const Admin = () => {
                       floorId="second"
                       editingId={editingId}
                       setEditingId={setEditingId}
-                      setOffices={setOffices}
+                      setOffices={setLocalOffices}
                       handleSaveEdit={handleSaveEdit}
-                      handleDeleteOffice={handleDeleteOffice}
-                      fetchOffices={fetchOffices}
+                      handleAddOffice={handleAddOffice}
+                      refreshOffices={refreshOffices}
+                      handleImageUpload={handleImageUpload}
+                      uploadingStatus={uploadingStatus}
                       searchQuery={searchQuery}
                       setSearchQuery={setSearchQuery}
                     />
@@ -308,10 +403,12 @@ const Admin = () => {
                       floorId="third"
                       editingId={editingId}
                       setEditingId={setEditingId}
-                      setOffices={setOffices}
+                      setOffices={setLocalOffices}
                       handleSaveEdit={handleSaveEdit}
-                      handleDeleteOffice={handleDeleteOffice}
-                      fetchOffices={fetchOffices}
+                      handleAddOffice={handleAddOffice}
+                      refreshOffices={refreshOffices}
+                      handleImageUpload={handleImageUpload}
+                      uploadingStatus={uploadingStatus}
                       searchQuery={searchQuery}
                       setSearchQuery={setSearchQuery}
                     />
@@ -396,8 +493,10 @@ const OfficeList = ({
   setEditingId, 
   setOffices, 
   handleSaveEdit, 
-  handleDeleteOffice,
-  fetchOffices,
+  handleAddOffice,
+  refreshOffices,
+  handleImageUpload,
+  uploadingStatus,
   searchQuery,
   setSearchQuery 
 }: any) => {
@@ -429,7 +528,9 @@ const OfficeList = ({
             {offices.map((office: any) => (
               <TableRow key={office.id} className="border-neutral-800 hover:bg-neutral-800/30 transition-colors">
                 <TableCell className="font-medium align-top py-4">
-                  <div className="text-white">{String(office.name).replace(/\\n/g, ' ')}</div>
+                  <div className="text-white flex flex-col gap-1">
+                    <span>{String(office.name).replace(/\\n/g, ' ')}</span>
+                  </div>
                   {office.image_url && (
                     <div className="mt-1 text-[10px] text-green-500 flex items-center gap-1">
                       <Check size={10} /> Image Linked
@@ -446,12 +547,54 @@ const OfficeList = ({
                         className="bg-neutral-800 border-neutral-700 h-8 text-xs"
                         placeholder="Officer name"
                       />
-                      <Input 
-                        value={office.image_url || ''}
-                        onChange={(e) => setOffices((prev: any[]) => prev.map(o => o.id === office.id ? { ...o, image_url: e.target.value } : o))}
-                        className="bg-neutral-800 border-neutral-700 h-8 text-xs"
-                        placeholder="Image URL"
-                      />
+                      <div className="flex flex-col gap-2">
+                        <div className="relative group">
+                          {uploadingStatus[office.id] !== undefined ? (
+                            <div className="w-full h-12 border border-neutral-800 rounded flex flex-col items-center justify-center p-2 gap-2">
+                              <Progress value={uploadingStatus[office.id]} className="h-1 animate-pulse" />
+                              <span className="text-[10px] text-blue-400 font-medium">
+                                {uploadingStatus[office.id] === 100 ? 'Finalizing...' : 'Uploading...'}
+                              </span>
+                            </div>
+                          ) : office.image_url ? (
+                            <div className="relative w-full h-12 rounded border border-neutral-700 overflow-hidden">
+                              <img src={office.image_url} alt="Office" className="w-full h-full object-cover" />
+                              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                                <label className="cursor-pointer text-[10px] text-white flex items-center gap-1">
+                                  <Upload size={10} /> Change
+                                  <input 
+                                    type="file" 
+                                    className="hidden" 
+                                    accept="image/*"
+                                    onChange={(e) => {
+                                      const file = e.target.files?.[0];
+                                      if (file) handleImageUpload(file, office.id);
+                                    }}
+                                  />
+                                </label>
+                              </div>
+                              {/* Success indicator */}
+                              <div className="absolute top-1 right-1 bg-green-500 rounded-full p-0.5 shadow-lg">
+                                <Check size={8} className="text-white" />
+                              </div>
+                            </div>
+                          ) : (
+                            <label className="w-full h-12 border-2 border-dashed border-neutral-800 rounded flex flex-col items-center justify-center gap-1 text-neutral-500 hover:border-neutral-700 hover:text-neutral-400 cursor-pointer transition-all">
+                              <ImageIcon size={14} />
+                              <span className="text-[10px]">Upload Photo</span>
+                              <input 
+                                type="file" 
+                                className="hidden" 
+                                accept="image/*"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) handleImageUpload(file, office.id);
+                                }}
+                              />
+                            </label>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   ) : (
                     <span className="text-neutral-300 text-sm">{office.officer || '—'}</span>
@@ -478,19 +621,14 @@ const OfficeList = ({
                         <Button size="icon" variant="ghost" className="h-8 w-8 text-green-500" onClick={() => handleSaveEdit(office.id)}>
                           <Check size={16} />
                         </Button>
-                        <Button size="icon" variant="ghost" className="h-8 w-8 text-neutral-400" onClick={() => { setEditingId(null); fetchOffices(); }}>
+                        <Button size="icon" variant="ghost" className="h-8 w-8 text-neutral-400" onClick={() => { setEditingId(null); refreshOffices(); }}>
                           <X size={16} />
                         </Button>
                       </>
                     ) : (
-                      <>
-                        <Button size="icon" variant="ghost" className="h-8 w-8 text-neutral-400 hover:text-white" onClick={() => setEditingId(office.id)}>
-                          <Edit2 size={16} />
-                        </Button>
-                        <Button size="icon" variant="ghost" className="h-8 w-8 text-red-500/50 hover:text-red-500" onClick={() => handleDeleteOffice(office.id)}>
-                          <X size={16} />
-                        </Button>
-                      </>
+                      <Button size="icon" variant="ghost" className="h-8 w-8 text-neutral-400 hover:text-white" onClick={() => setEditingId(office.id)}>
+                        <Edit2 size={16} />
+                      </Button>
                     )}
                   </div>
                 </TableCell>
