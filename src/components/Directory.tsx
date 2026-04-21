@@ -9,18 +9,32 @@ interface DirectoryProps {
 }
 
 const Directory = ({ onBack, onSelectOffice }: DirectoryProps) => {
-  const { language } = useKiosk();
+  const { language, offices } = useKiosk();
   const t = translations[language];
-  const [selectedOffice, setSelectedOffice] = useState<Office | null>(null);
+  const [selectedOffice, setSelectedOffice] = useState<any | null>(null);
+  // Group offices by floor
+  const floorOrder = ['basement', 'first', 'second', 'third'];
+  const floors = Array.from(new Set(offices.map(o => o.floor_id))).sort((a, b) => 
+    floorOrder.indexOf(String(a)) - floorOrder.indexOf(String(b))
+  );
+  
+  const officesByFloor = floors.map(floorId => ({
+    floor: floorId,
+    name: floorId === 'basement' ? "Basement" : floorId === 'first' ? "Ground Floor" : `${capitalize(String(floorId))} Floor`,
+    nameFil: floorId === 'basement' ? "Basement" : floorId === 'first' ? "Unang Palapag" : `Ika-${floorOrder.indexOf(String(floorId))} Palapag`,
+    offices: offices.filter(o => o.floor_id === floorId)
+  }));
 
-  const allOffices = cityHallFloors.flatMap(f => f.offices);
+  function capitalize(s: string) {
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
 
   if (selectedOffice) {
-    const name = language === 'fil' ? selectedOffice.nameFil : selectedOffice.name;
-    const desc = language === 'fil' ? selectedOffice.descriptionFil : selectedOffice.description;
-    const services = language === 'fil' ? selectedOffice.servicesFil : selectedOffice.services;
-    const floorData = cityHallFloors.find(f => f.floor === selectedOffice.floor);
-    const floorName = language === 'fil' ? floorData?.nameFil : floorData?.name;
+    const name = language === 'fil' ? (selectedOffice.name_fil || selectedOffice.name) : selectedOffice.name;
+    const desc = language === 'fil' ? (selectedOffice.description_fil || selectedOffice.description) : selectedOffice.description;
+    const services = Array.isArray(selectedOffice.services) ? (language === 'fil' ? (selectedOffice.services_fil || selectedOffice.services) : selectedOffice.services) : [];
+    const floorId = selectedOffice.floor_id;
+    const floorName = language === 'fil' ? (floorId === 'first' ? "Unang Palapag" : floorId === 'basement' ? 'Basement' : `Ika-${floorOrder.indexOf(String(floorId))} Palapag`) : (floorId === 'first' ? "Ground Floor" : floorId === 'basement' ? 'Basement' : `${capitalize(String(floorId))} Floor`);
 
     return (
       <div className="min-h-screen bg-background">
@@ -75,11 +89,11 @@ const Directory = ({ onBack, onSelectOffice }: DirectoryProps) => {
       </div>
 
       <div className="p-6 space-y-6 max-w-4xl mx-auto">
-        {cityHallFloors.map((floor) => (
+        {officesByFloor.length > 0 ? officesByFloor.map((floor) => (
           <div key={floor.floor}>
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pine to-pine-light flex items-center justify-center">
-                <span className="text-primary-foreground font-bold">{floor.floor === 1 ? 'G' : floor.floor}</span>
+                <span className="text-primary-foreground font-bold uppercase text-xs">{String(floor.floor).charAt(0)}</span>
               </div>
               <h3 className="font-display font-bold text-lg text-foreground">
                 {language === 'fil' ? floor.nameFil : floor.name}
@@ -94,7 +108,7 @@ const Directory = ({ onBack, onSelectOffice }: DirectoryProps) => {
                 >
                   <div>
                     <p className="font-semibold text-foreground group-hover:text-primary transition-colors">
-                      {language === 'fil' ? office.nameFil : office.name}
+                      {language === 'fil' ? (office.name_fil || office.name) : office.name}
                     </p>
                     <p className="text-sm text-muted-foreground">{t.room} {office.room}</p>
                   </div>
@@ -103,7 +117,11 @@ const Directory = ({ onBack, onSelectOffice }: DirectoryProps) => {
               ))}
             </div>
           </div>
-        ))}
+        )) : (
+          <div className="text-center py-20 text-muted-foreground">
+            No offices found in the database.
+          </div>
+        )}
       </div>
     </div>
   );

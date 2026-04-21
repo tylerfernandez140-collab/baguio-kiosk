@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { KioskProvider, useKiosk } from '@/context/KioskContext';
+import { useKiosk } from '@/context/KioskContext';
 import { cityHallFloors, type Office } from '@/data/kioskData';
 import HeroDashboard from '@/components/HeroDashboard';
 import Directory from '@/components/Directory';
@@ -61,9 +61,7 @@ const KioskApp = () => {
 };
 
 const Index = () => (
-  <KioskProvider>
-    <KioskApp />
-  </KioskProvider>
+  <KioskApp />
 );
 
 export default Index;

@@ -6,10 +6,10 @@ import { useKiosk } from '@/context/KioskContext';
 import ErrorBoundary from './ErrorBoundary';
 import * as THREE from 'three';
 
-import FirstFloor, { firstFloorLabels } from './floors/FirstFloor';
-import SecondFloor, { secondFloorLabels } from './floors/SecondFloor';
-import ThirdFloor, { thirdFloorLabels } from './floors/ThirdFloor';
-import BasementFloor, { basementFloorLabels } from './floors/BasementFloor';
+import FirstFloor from './floors/FirstFloor';
+import SecondFloor from './floors/SecondFloor';
+import ThirdFloor from './floors/ThirdFloor';
+import BasementFloor from './floors/BasementFloor';
 
 // Preload all 3D models
 useGLTF.preload('/models/first_floor.glb');
@@ -90,7 +90,7 @@ interface CityHallDirectoryProps {
 }
 
 const CityHallDirectory = ({ onNavigate }: CityHallDirectoryProps) => {
-  const { language, theme, selectedFloor, setSelectedFloor, startNavigation } = useKiosk();
+  const { language, theme, selectedFloor, setSelectedFloor, startNavigation, labels } = useKiosk();
   const [selectedCategory, setSelectedCategory] = useState('maps');
   const [autoRotate, setAutoRotate] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -100,11 +100,11 @@ const CityHallDirectory = ({ onNavigate }: CityHallDirectoryProps) => {
   const controlsRef = useRef<any>(null);
 
   const allOffices = useMemo(() => [
-    ...Object.entries(basementFloorLabels).map(([id, name]) => ({ id, name, floor: 'basement', floorName: 'Basement' })),
-    ...Object.entries(firstFloorLabels).map(([id, name]) => ({ id, name, floor: 'first', floorName: 'First Floor' })),
-    ...Object.entries(secondFloorLabels).map(([id, name]) => ({ id, name, floor: 'second', floorName: 'Second Floor' })),
-    ...Object.entries(thirdFloorLabels).map(([id, name]) => ({ id, name, floor: 'third', floorName: 'Third Floor' })),
-  ], []);
+    ...Object.entries(labels.basement || {}).map(([id, name]) => ({ id, name: String(name), floor: 'basement', floorName: 'Basement' })),
+    ...Object.entries(labels.first || {}).map(([id, name]) => ({ id, name: String(name), floor: 'first', floorName: 'First Floor' })),
+    ...Object.entries(labels.second || {}).map(([id, name]) => ({ id, name: String(name), floor: 'second', floorName: 'Second Floor' })),
+    ...Object.entries(labels.third || {}).map(([id, name]) => ({ id, name: String(name), floor: 'third', floorName: 'Third Floor' })),
+  ], [labels]);
 
   const filteredOffices = allOffices.filter(office =>
     office.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -345,7 +345,7 @@ const CityHallDirectory = ({ onNavigate }: CityHallDirectoryProps) => {
                           className="w-full text-left px-4 py-3 rounded-xl hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors group"
                         >
                           <div className="text-sm font-semibold text-gray-700 dark:text-gray-200 group-hover:text-green-600 transition-colors truncate">
-                            {office.name.replace(/\n/g, ' ')}
+                            {String(office.name).replace(/\\n/g, '\n').replace(/\n/g, ' ')}
                           </div>
                           <div className="text-[10px] text-gray-400 uppercase tracking-wider">
                             {office.floorName}

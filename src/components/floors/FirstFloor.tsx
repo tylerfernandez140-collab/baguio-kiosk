@@ -5,26 +5,7 @@ import { useKiosk } from '../../context/KioskContext';
 import { getKioskSettings } from '../../config/kioskConfig';
 import FirstFloorBase, { FloorBaseProps } from './components/FirstFloorBase';
 
-export const firstFloorLabels: Record<string, string> = {
-  city_treasurers: 'City Treasurer',
-  city_planning_office: 'Planning and\nDevelopment Office ',
-  session_hall: 'Session Hall',
-  clinic: 'Clinic',
-  mitd: 'MITD',
-  coop: 'Coop',
-  sp_admin: 'SP Admin',
-  cdcc: 'CDCC\nOffice',
-  city_budget_office: 'City Budget\nOffice',
-  city_accountant: 'City Accountant',
-  city_auditors: 'commission \non\nAudits',
-  city_treasurers_2: 'City Treasurers\nOffice',
-  city_auditors_2: 'Commission \non Audits',
-  cr_male: 'Male\nCR',
-  cr_female: 'Female\nCR',
-  licensing: 'Permits and \nLicensing\nOffice',
-  one_stop_shop: 'One Stop Shop',
-  'cr_one_stop+shop': 'One Stop Shop\nCR',
-};
+
 
 function YouAreHere({ position }: { position: [number, number, number] }) {
   return (
@@ -319,7 +300,7 @@ const firstFloorPathsKiosk2: Record<string, THREE.Vector3[]> = {
 export default function FirstFloor(
   props: Omit<FloorBaseProps, 'floorId' | 'url' | 'labels' | 'offset'>
 ) {
-  const { kioskId } = useKiosk();
+  const { kioskId, labels } = useKiosk();
   const settings = getKioskSettings(kioskId);
 
   const paths = kioskId === 'kiosk_2' ? firstFloorPathsKiosk2 : firstFloorPaths;
@@ -329,7 +310,7 @@ export default function FirstFloor(
       floorId="first"
       url="/models/first_floor.glb"
       offset={[0, 0, 0]}
-      labels={firstFloorLabels}
+      labels={labels.first}
       predefinedPaths={settings.showPaths ? paths : {}}
       {...props}
     >

@@ -1,17 +1,19 @@
 export interface Office {
   id: string;
   name: string;
-  nameFil: string;
+  nameFil?: string;
   description: string;
-  descriptionFil: string;
+  descriptionFil?: string;
   floor: number;
-  room: string;
-  contact: string;
-  hours: string;
-  officer: string;
-  services: string[];
-  servicesFil: string[];
-  icon: string;
+  floor_id?: string;
+  room?: string;
+  contact?: string;
+  hours?: string;
+  officer?: string;
+  services?: string[];
+  servicesFil?: string[];
+  icon?: string;
+  image_url?: string;
 }
 
 export interface FloorData {

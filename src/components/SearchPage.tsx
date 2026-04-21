@@ -9,18 +9,18 @@ interface SearchPageProps {
 }
 
 const SearchPage = ({ onBack, onNavigateToOffice }: SearchPageProps) => {
-  const { language } = useKiosk();
+  const { language, offices } = useKiosk();
   const t = translations[language];
   const [query, setQuery] = useState('');
 
-  const allOffices = cityHallFloors.flatMap(f => f.offices);
-
   const results = query.length > 1
-    ? allOffices.filter(o => {
+    ? offices.filter(o => {
         const q = query.toLowerCase();
-        const name = (language === 'fil' ? o.nameFil : o.name).toLowerCase();
-        const services = (language === 'fil' ? o.servicesFil : o.services).join(' ').toLowerCase();
-        return name.includes(q) || services.includes(q) || o.room.toLowerCase().includes(q) || o.officer.toLowerCase().includes(q);
+        const name = (language === 'fil' ? (o.name_fil || o.name) : o.name).toLowerCase();
+        const services = Array.isArray(o.services) ? (language === 'fil' ? (o.services_fil || o.services) : o.services).join(' ').toLowerCase() : '';
+        const room = String(o.room || '').toLowerCase();
+        const officer = String(o.officer || '').toLowerCase();
+        return name.includes(q) || services.includes(q) || room.includes(q) || officer.includes(q);
       })
     : [];
 
@@ -50,7 +50,9 @@ const SearchPage = ({ onBack, onNavigateToOffice }: SearchPageProps) => {
           </p>
         )}
         {results.map(office => {
-          const floor = cityHallFloors.find(f => f.floor === office.floor);
+          const floorNum = office.floor;
+          const floorName = language === 'fil' ? (floorNum === 1 ? "Unang Palapag" : `Ika-${floorNum} Palapag`) : (floorNum === 1 ? "Ground Floor" : `${floorNum}${getOrdinal(floorNum)} Floor`);
+          
           return (
             <button
               key={office.id}
@@ -61,10 +63,10 @@ const SearchPage = ({ onBack, onNavigateToOffice }: SearchPageProps) => {
                 <Building2 className="w-5 h-5 text-primary" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-foreground">{language === 'fil' ? office.nameFil : office.name}</p>
+                <p className="font-semibold text-foreground">{language === 'fil' ? (office.name_fil || office.name) : office.name}</p>
                 <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{language === 'fil' ? floor?.nameFil : floor?.name} - {office.room}</span>
-                  <span className="flex items-center gap-1"><FileText className="w-3 h-3" />{office.services.length} services</span>
+                  <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{floorName} - {office.room}</span>
+                  <span className="flex items-center gap-1"><FileText className="w-3 h-3" />{office.services?.length || 0} services</span>
                 </div>
               </div>
             </button>
@@ -82,6 +84,11 @@ const SearchPage = ({ onBack, onNavigateToOffice }: SearchPageProps) => {
       </div>
     </div>
   );
+  function getOrdinal(n: number) {
+    const s = ["th", "st", "nd", "rd"];
+    const v = n % 100;
+    return s[(v - 20) % 10] || s[v] || s[0];
+  }
 };
 
 export default SearchPage;

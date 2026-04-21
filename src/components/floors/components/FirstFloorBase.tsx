@@ -422,13 +422,14 @@ export default function FloorBase({
   const getOfficeLabel = (name: string) => {
     const normalizedName = name.toLowerCase().replace(/[^a-z0-9]/g, '');
     const exactMatch = labels[name.toLowerCase().replace(/[._]\d+$/, "")] || labels[name.toLowerCase()];
-    if (exactMatch) return exactMatch;
+    
+    if (exactMatch) return String(exactMatch).replace(/\\n/g, '\n');
 
     const matchingKey = Object.keys(labels).find(key => 
       key.toLowerCase().replace(/[^a-z0-9]/g, '') === normalizedName
     );
     
-    if (matchingKey) return labels[matchingKey];
+    if (matchingKey) return String(labels[matchingKey]).replace(/\\n/g, '\n');
     return name.replace(/[_+]/g, '\n');
   };
 
