@@ -114,7 +114,7 @@ const CityHallDirectory = ({ onNavigate }: CityHallDirectoryProps) => {
 
   const handleOfficeSelect = (office: typeof allOffices[0]) => {
     setSelectedFloor(office.floor);
-    startNavigation(office.floor, office.id, office.name.replace(/\n/g, ' '));
+    startNavigation(office.floor, office.id, office.name);
     setIsSearchOpen(false);
     setSearchQuery('');
   };
@@ -433,8 +433,9 @@ const CityHallDirectory = ({ onNavigate }: CityHallDirectoryProps) => {
 interface NavigationCompletePopupProps {
   navigation: {
     isActive: boolean;
+    isTransitioning: boolean;
     officeName: string;
-    steps: { type: string; completed: boolean }[];
+    steps: { type: string; completed: boolean; floorId: string }[];
     currentStepIndex: number;
   };
   onRepeat: () => void;
@@ -444,42 +445,44 @@ interface NavigationCompletePopupProps {
 function NavigationCompletePopup({ navigation, onRepeat, onDone }: NavigationCompletePopupProps) {
   const { language } = useKiosk();
   
-  // Check if we've reached the final step (arrived)
+  // Check if we've reached the final step (arrived), on the correct floor, and NOT transitioning
   const currentStep = navigation.steps[navigation.currentStepIndex];
-  const hasArrived = currentStep?.type === 'arrived';
+  const { selectedFloor } = useKiosk();
+  const hasArrived = currentStep?.type === 'arrived' && 
+                    currentStep.floorId === selectedFloor && 
+                    !navigation.isTransitioning;
   
   if (!hasArrived) return null;
 
   return (
-    <div className="fixed inset-0 z-[2147483647] flex items-start justify-center pt-4 animate-fade-in" style={{ isolation: 'isolate' }}>
-      {/* Backdrop to block 3D elements */}
-      <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px]"></div>
-      
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-4 max-w-xs w-full mx-4 text-center border-2 border-green-500 relative z-10">
+    <div className="fixed top-[100px] left-[130px] z-[2147483647] pointer-events-none animate-fade-in" style={{ isolation: 'isolate' }}>
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-3 max-w-[240px] w-full text-center border-2 border-green-500 relative z-10 pointer-events-auto">
         {/* Success Icon */}
-        <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-2">
-          <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
+        <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-1 font-bold text-green-600">
+          <CheckCircle className="w-5 h-5" />
         </div>
         
         {/* Title */}
-        <h2 className="text-lg font-bold text-gray-800 dark:text-white mb-3">
-          {language === 'en' ? 'You Have Arrived!' : 'Nakarating Ka Na!'}
-        </h2>
+        <div className="bg-red-500 rounded-lg p-2 mb-3 shadow-inner">
+          <h2 className="text-base font-bold text-white uppercase tracking-tight whitespace-pre-line leading-tight">
+            {navigation.officeName.replace(/\\n/g, '\n')}
+          </h2>
+        </div>
         
         {/* Action Buttons */}
         <div className="flex gap-2">
           <button
             onClick={onRepeat}
-            className="flex-1 flex items-center justify-center gap-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium py-2 px-3 rounded-lg transition-all text-sm"
+            className="flex-1 flex items-center justify-center gap-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium py-1.5 px-2 rounded-lg transition-all text-xs"
           >
-            <RotateCcw className="w-4 h-4" />
+            <RotateCcw className="w-3.5 h-3.5" />
             {language === 'en' ? 'Repeat' : 'Ulitin'}
           </button>
           <button
             onClick={onDone}
-            className="flex-1 flex items-center justify-center gap-1 bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-3 rounded-lg transition-all text-sm"
+            className="flex-1 flex items-center justify-center gap-1 bg-green-500 hover:bg-green-600 text-white font-medium py-1.5 px-2 rounded-lg transition-all text-xs"
           >
-            <CheckCircle className="w-4 h-4" />
+            <CheckCircle className="w-3.5 h-3.5" />
             {language === 'en' ? 'Done' : 'Tapos'}
           </button>
         </div>

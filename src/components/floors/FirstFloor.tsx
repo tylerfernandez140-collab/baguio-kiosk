@@ -7,15 +7,16 @@ import FirstFloorBase, { FloorBaseProps } from './components/FirstFloorBase';
 
 
 
-function YouAreHere({ position }: { position: [number, number, number] }) {
+function YouAreHere({ position, label = 'YOU ARE HERE' }: { position: [number, number, number] | THREE.Vector3, label?: string }) {
+  const pos = Array.isArray(position) ? position : [position.x, position.y, position.z];
   return (
-    <Html position={position} center>
+    <Html position={pos as [number, number, number]} center>
       <div className="flex flex-col items-center">
-        <div className="bg-blue-600 text-white px-2 py-1 rounded-full text-[10px] font-bold shadow-lg mb-1 whitespace-nowrap animate-bounce">
-          YOU ARE HERE
+        <div className={`text-white px-2 py-1 rounded-full text-[10px] font-bold shadow-lg mb-1 whitespace-nowrap animate-bounce ${label.includes('HERE') ? 'bg-blue-600' : 'bg-green-600'}`}>
+          {label}
         </div>
         <div className="relative">
-          <MapPin className="w-8 h-8 text-blue-600 filter drop-shadow-md" />
+          <MapPin className={`w-8 h-8 filter drop-shadow-md ${label.includes('HERE') ? 'text-blue-600' : 'text-green-600'}`} />
           <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-4 h-1 bg-black/20 rounded-full blur-[2px]"></div>
         </div>
       </div>
@@ -310,7 +311,7 @@ const firstFloorPathsKiosk2: Record<string, THREE.Vector3[]> = {
 export default function FirstFloor(
   props: Omit<FloorBaseProps, 'floorId' | 'url' | 'labels' | 'offset'>
 ) {
-  const { kioskId, labels } = useKiosk();
+  const { kioskId, labels, navigation } = useKiosk();
   const settings = getKioskSettings(kioskId);
 
   const paths = kioskId === 'kiosk_2' ? firstFloorPathsKiosk2 : firstFloorPaths;
@@ -325,6 +326,11 @@ export default function FirstFloor(
       {...props}
     >
       <YouAreHere position={settings.firstFloorPosition} />
+      
+      {/* Show Stairs Marker when going to another floor */}
+      {navigation?.isActive && navigation.floorId !== 'first' && (
+        <YouAreHere label="TO NEXT FLOOR" position={[2.96, 0.5, 0.5]} />
+      )}
     </FirstFloorBase>
   );
 }

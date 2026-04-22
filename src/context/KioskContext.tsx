@@ -240,66 +240,89 @@ export const KioskProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const steps: NavigationStep[] = [];
     let stepId = 0;
 
-    // Step 1: Start from current position
-    steps.push({
-      id: `step-${stepId++}`,
-      type: 'walk',
-      description: `Start from your current location`,
-      descriptionFil: `Magsimula sa iyong kasalukuyang lokasyon`,
-      floorId: startFloor,
-      completed: false,
-    });
+    const floorOrder = ['basement', 'first', 'second', 'third'];
+    const startIndex = floorOrder.indexOf(startFloor);
+    const endIndex = floorOrder.indexOf(targetFloor);
 
-    // If target is on a different floor, add stairs/transition steps
-    if (targetFloor !== startFloor) {
-      const floorNames: Record<string, string> = {
-        basement: 'Basement',
-        first: 'First Floor',
-        second: 'Second Floor',
-        third: 'Third Floor',
-      };
+    if (startIndex === -1 || endIndex === -1) return [];
 
-      // Step 2: Walk to stairs
+    const floorNames: Record<string, string> = {
+      basement: 'Basement',
+      first: 'First Floor',
+      second: 'Second Floor',
+      third: 'Third Floor',
+    };
+
+    if (startIndex === endIndex) {
+      // Single floor navigation
       steps.push({
         id: `step-${stepId++}`,
         type: 'walk',
-        description: `Follow the path to the stairs`,
-        descriptionFil: `Sundin ang daan patungo sa hagdan`,
-        floorId: startFloor,
-        targetPosition: { x: 2.96, y: 0.5, z: 0.5 }, // Stairs position
-        completed: false,
-      });
-
-      // Step 3: Go up/down stairs
-      const direction = targetFloor === 'basement' ? 'down' : 'up';
-      steps.push({
-        id: `step-${stepId++}`,
-        type: 'stairs',
-        description: `Go ${direction} the stairs to ${floorNames[targetFloor]}`,
-        descriptionFil: `Bumaba/pumunta pababa/paakyat sa hagdan patungo sa ${floorNames[targetFloor]}`,
+        description: `Follow the path to ${officeName}`,
+        descriptionFil: `Sundin ang daan patungo sa ${officeName}`,
         floorId: startFloor,
         completed: false,
       });
+    } else {
+      // Multi-floor navigation
+      const isUp = endIndex > startIndex;
+      const direction = isUp ? 1 : -1;
+      
+      // Determine the sequence of floors to visit
+      let currentIdx = startIndex;
+      
+      while (currentIdx !== endIndex) {
+        const currentFloorId = floorOrder[currentIdx];
+        const nextIdx = currentIdx + direction;
+        const nextFloorId = floorOrder[nextIdx];
+        const stairDirection = isUp ? 'up' : 'down';
 
-      // Step 4: Floor transition
-      steps.push({
-        id: `step-${stepId++}`,
-        type: 'floor_change',
-        description: `Entering ${floorNames[targetFloor]}`,
-        descriptionFil: `Papasok sa ${floorNames[targetFloor]}`,
-        floorId: targetFloor,
-        completed: false,
-      });
+        // 1. Walk to stairs on current floor
+        steps.push({
+          id: `step-${stepId++}`,
+          type: 'walk',
+          description: `Follow the path to the stairs for ${floorNames[nextFloorId]}`,
+          descriptionFil: `Sundin ang daan patungo sa hagdan para sa ${floorNames[nextFloorId]}`,
+          floorId: currentFloorId,
+          targetPosition: { x: 2.96, y: 0.5, z: 0.5 }, // General stairs position
+          completed: false,
+        });
 
-      // Step 5: Continue from stairs entrance
-      steps.push({
-        id: `step-${stepId++}`,
-        type: 'walk',
-        description: `Continue from the stairs entrance`,
-        descriptionFil: `Magpatuloy mula sa pasukan ng hagdan`,
-        floorId: targetFloor,
-        completed: false,
-      });
+        // 2. Take stairs
+        steps.push({
+          id: `step-${stepId++}`,
+          type: 'stairs',
+          description: `Take the stairs ${stairDirection} to the ${floorNames[nextFloorId]}`,
+          descriptionFil: `Gamitin ang hagdan ${stairDirection === 'up' ? 'paakyat' : 'pababa'} patungo sa ${floorNames[nextFloorId]}`,
+          floorId: currentFloorId,
+          completed: false,
+        });
+
+        // 3. Floor transition step (triggers visual change)
+        steps.push({
+          id: `step-${stepId++}`,
+          type: 'floor_change',
+          description: `Arrived at ${floorNames[nextFloorId]}`,
+          descriptionFil: `Nakarating na sa ${floorNames[nextFloorId]}`,
+          floorId: nextFloorId,
+          completed: false,
+        });
+
+        currentIdx = nextIdx;
+
+        // 4. If we reached the target floor, walk to destination
+        // If we haven't reached the target floor yet, we'll loop back and walk to the NEXT stairs
+        if (currentIdx === endIndex) {
+          steps.push({
+            id: `step-${stepId++}`,
+            type: 'walk',
+            description: `Continue from the stairs landing toward ${officeName}`,
+            descriptionFil: `Magpatuloy mula sa hagdan patungo sa ${officeName}`,
+            floorId: nextFloorId,
+            completed: false,
+          });
+        }
+      }
     }
 
     // Final step: Arrive at destination
