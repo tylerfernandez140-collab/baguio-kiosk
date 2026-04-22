@@ -5,7 +5,7 @@ import { useGLTF } from '@react-three/drei';
 interface ModelProps {
   url: string;
   offset?: [number, number, number];
-  onSelectOffice?: (name: string, position: THREE.Vector3) => void;
+  onSelectOffice?: (name: string | null, position: THREE.Vector3) => void;
   onLoadMarkers?: (
     markers: { 
       name: string; 
@@ -32,7 +32,10 @@ export function Model({
     const name = clickedObject.name.toLowerCase();
     const isBase = ['ground', 'plane', 'stairs', 'cube', 'base', 'floor', 'outline', 'center'].some(ignored => name.includes(ignored));
     
-    if (isBase) return;
+    if (isBase) {
+      onSelectOffice?.(null, new THREE.Vector3());
+      return;
+    }
     
     const box = new THREE.Box3().setFromObject(clickedObject);
     const center = new THREE.Vector3();
@@ -152,5 +155,12 @@ export function Model({
     return () => clearTimeout(timeout);
   }, [url, wrapper, onLoadMarkers]);
 
-  return <primitive object={wrapper} onClick={handleClick} />;
+  return (
+    <primitive 
+      object={wrapper} 
+      onClick={handleClick} 
+      onPointerMissed={() => onSelectOffice?.(null, new THREE.Vector3())}
+    />
+  );
 }
+

@@ -58,7 +58,7 @@ export default function FloorBase({
       <Model
         url={url}
         offset={offset}
-        onSelectOffice={(name, position) => setSelectedOffice({ name, position })}
+        onSelectOffice={(name, position) => name ? setSelectedOffice({ name, position }) : setSelectedOffice(null)}
         onLoadMarkers={setOfficeMarkers}
       />
       

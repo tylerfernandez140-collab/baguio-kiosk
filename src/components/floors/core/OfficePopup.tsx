@@ -13,7 +13,7 @@ interface OfficePopupProps {
 export function OfficePopup({ name, label, position, hasPath, onGetDirection }: OfficePopupProps) {
   return (
     <Html position={[position.x, position.y + 0.8, position.z]} center>
-      <div className="relative">
+      <div className="relative pointer-events-auto" onClick={(e) => e.stopPropagation()}>
         <div className="bg-red-500 rounded relative shadow-lg flex flex-col items-center justify-center px-3 py-2 min-w-[120px]">
           <span className="text-white text-sm font-bold text-center leading-tight whitespace-pre-line mb-2">
             {label.toUpperCase()}
@@ -22,7 +22,7 @@ export function OfficePopup({ name, label, position, hasPath, onGetDirection }: 
           {hasPath && (
             <button
               onClick={() => onGetDirection(name)}
-              className="bg-white text-red-500 text-[10px] font-bold px-3 py-1 rounded-full hover:bg-red-50 hover:scale-105 transition-all w-full pointer-events-auto shadow-md"
+              className="bg-white text-red-500 text-[10px] font-bold px-3 py-1 rounded-full hover:bg-red-50 hover:scale-105 transition-all w-full shadow-md"
             >
               GET DIRECTION
             </button>
