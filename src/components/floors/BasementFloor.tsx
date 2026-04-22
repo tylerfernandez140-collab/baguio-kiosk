@@ -5,7 +5,7 @@ import { useKiosk } from '../../context/KioskContext';
 
 
 const basementPaths: Record<string, THREE.Vector3[]> = {
-  gso: [
+gso: [
     new THREE.Vector3(2.6, 0.9, 3.8),
     new THREE.Vector3(2.6, 0.1, 4.9),
     new THREE.Vector3(-5.2, 0.01, 4.9),
