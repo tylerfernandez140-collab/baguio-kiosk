@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import SecondFloorBase, { FloorBaseProps } from './components/SecondFloorBase';
 import { useKiosk } from '../../context/KioskContext';
 import { getKioskSettings } from '../../config/kioskConfig';
 
@@ -379,8 +378,10 @@ const secondFloorPathsKiosk2: Record<string, THREE.Vector3[]> = {
   ...secondFloorPaths
 };
 
+import FloorBase from './core/FloorBase';
+
 export default function SecondFloor(
-  props: Omit<FloorBaseProps, 'floorId' | 'url' | 'labels' | 'offset'>
+  props: any
 ) {
   const { kioskId, labels } = useKiosk();
   const settings = getKioskSettings(kioskId);
@@ -388,7 +389,7 @@ export default function SecondFloor(
   const paths = kioskId === 'kiosk_2' ? secondFloorPathsKiosk2 : secondFloorPaths;
 
   return (
-    <SecondFloorBase
+    <FloorBase
       floorId="second"
       url="/models/sekand_floor.glb"
       offset={[0, 0, 0]}
