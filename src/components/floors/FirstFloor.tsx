@@ -3,6 +3,7 @@ import { Html } from '@react-three/drei';
 import { MapPin } from 'lucide-react';
 import { useKiosk } from '../../context/KioskContext';
 import { getKioskSettings } from '../../config/kioskConfig';
+import FirstFloorBase, { FloorBaseProps } from './components/FirstFloorBase';
 
 
 
@@ -295,10 +296,8 @@ const firstFloorPathsKiosk2: Record<string, THREE.Vector3[]> = {
   ],
 };
 
-import FloorBase from './core/FloorBase';
-
 export default function FirstFloor(
-  props: any
+  props: Omit<FloorBaseProps, 'floorId' | 'url' | 'labels' | 'offset'>
 ) {
   const { kioskId, labels } = useKiosk();
   const settings = getKioskSettings(kioskId);
@@ -306,7 +305,7 @@ export default function FirstFloor(
   const paths = kioskId === 'kiosk_2' ? firstFloorPathsKiosk2 : firstFloorPaths;
 
   return (
-    <FloorBase
+    <FirstFloorBase
       floorId="first"
       url="/models/first_floor.glb"
       offset={[0, 0, 0]}
@@ -315,6 +314,6 @@ export default function FirstFloor(
       {...props}
     >
       <YouAreHere position={settings.firstFloorPosition} />
-    </FloorBase>
+    </FirstFloorBase>
   );
 }

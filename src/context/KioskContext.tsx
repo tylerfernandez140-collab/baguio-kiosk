@@ -1,8 +1,37 @@
-import React, { createContext, useContext, useState } from 'react';
-import { useKioskBase, Language, Theme } from './hooks/useKioskBase';
-import { useKioskData } from './hooks/useKioskData';
-import { useKioskNavigation, NavigationState } from './hooks/useKioskNavigation';
-import { useKioskCamera, CameraAnimationState } from './hooks/useKioskCamera';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import { initialFloorLabels } from '@/data/floorLabels';
+import { supabase } from '@/lib/supabase';
+import { getKioskSettings } from '../config/kioskConfig';
+
+type Language = 'en' | 'fil';
+type Theme = 'day' | 'night';
+
+export interface NavigationStep {
+  id: string;
+  type: 'walk' | 'stairs' | 'elevator' | 'floor_change' | 'arrived';
+  description: string;
+  descriptionFil: string;
+  floorId: string;
+  targetPosition?: { x: number; y: number; z: number };
+  completed: boolean;
+}
+
+export interface NavigationState {
+  floorId: string;
+  officeId: string;
+  officeName: string;
+  steps: NavigationStep[];
+  currentStepIndex: number;
+  isActive: boolean;
+  isTransitioning: boolean;
+}
+
+interface CameraAnimationState {
+  isAnimating: boolean;
+  targetPosition: { x: number; y: number; z: number } | null;
+  lookAtPosition: { x: number; y: number; z: number } | null;
+  progress: number;
+}
 
 interface KioskContextType {
   language: Language;
@@ -33,20 +62,351 @@ interface KioskContextType {
 
 const KioskContext = createContext<KioskContextType | null>(null);
 
+const IDLE_TIMEOUT = 120000; // 2 minutes
+
 export const KioskProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { language, setLanguage, theme, toggleTheme, isIdle, resetIdleTimer, kioskId } = useKioskBase();
-  const { labels, updateLabel, offices, fetchOffices } = useKioskData();
-  const { cameraAnimation, setCameraAnimation, startCameraAnimation, stopCameraAnimation } = useKioskCamera();
+  const [language, setLanguage] = useState<Language>('en');
+  const [theme, setTheme] = useState<Theme>(() => {
+    const savedTheme = localStorage.getItem('kiosk-theme');
+    return (savedTheme as Theme) || 'day';
+  });
+  const [isIdle, setIsIdle] = useState(false);
+  const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  const resetIdleTimer = useCallback(() => {
+    setIsIdle(false);
+    if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+    const timer = setTimeout(() => setIsIdle(true), IDLE_TIMEOUT);
+    idleTimerRef.current = timer;
+  }, []);
+
+  useEffect(() => {
+    if (!isInitialized) {
+      // Only set up event listeners once
+      const events = ['touchstart', 'mousedown', 'mousemove', 'keydown'];
+      const handler = () => resetIdleTimer();
+      events.forEach(e => window.addEventListener(e, handler));
+      resetIdleTimer();
+      setIsInitialized(true);
+      
+      return () => {
+        events.forEach(e => window.removeEventListener(e, handler));
+        if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+      };
+    }
+  }, [isInitialized, resetIdleTimer]);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'night');
+    localStorage.setItem('kiosk-theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => setTheme(t => t === 'day' ? 'night' : 'day');
+
+  const [kioskId] = useState<string>(() => {
+    // 1. Check URL for ?kioskId=...
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlId = urlParams.get('kioskId');
+    if (urlId) {
+      localStorage.setItem('kiosk-id', urlId);
+      return urlId;
+    }
+    
+    // 2. Check Local Storage for previously saved ID
+    const savedId = localStorage.getItem('kiosk-id');
+    if (savedId) return savedId;
+    
+    // 3. Fallback to Environment Variable or Default
+    return import.meta.env.VITE_KIOSK_ID || 'kiosk_1';
+  });
+
   const [selectedFloor, setSelectedFloor] = useState('first');
-  const { 
-    navigation, 
-    startNavigation, 
-    clearNavigation, 
-    goToNextStep, 
-    completeCurrentStep, 
-    startFloorTransition, 
-    endFloorTransition 
-  } = useKioskNavigation(kioskId, setSelectedFloor, startCameraAnimation, stopCameraAnimation);
+  const [navigation, setNavigation] = useState<NavigationState | null>(null);
+  const [cameraAnimation, setCameraAnimation] = useState<CameraAnimationState>({
+    isAnimating: false,
+    targetPosition: null,
+    lookAtPosition: null,
+    progress: 0,
+  });
+  const [labels, setLabels] = useState(initialFloorLabels);
+  const [offices, setOffices] = useState<any[]>([]);
+
+  const fetchOffices = useCallback(async () => {
+    // Now just fetch from offices table as 'name' is synced with floor_labels.label_text
+    const { data, error } = await supabase
+      .from('offices')
+      .select('*')
+      .order('floor_id', { ascending: true })
+      .order('name', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching offices:', error);
+    } else if (data) {
+      setOffices(data);
+    }
+  }, []);
+
+  useEffect(() => {
+    const fetchLabels = async () => {
+      const { data, error } = await supabase.from('floor_labels').select('*');
+      if (error) {
+        console.error('Error fetching labels from Supabase:', error);
+        return;
+      }
+      
+      if (data && data.length > 0) {
+        const newLabels: Record<string, Record<string, string>> = JSON.parse(JSON.stringify(initialFloorLabels));
+        data.forEach((item: any) => {
+          if (!newLabels[item.floor_id]) newLabels[item.floor_id] = {};
+          newLabels[item.floor_id][item.label_key] = item.label_text;
+        });
+        setLabels(newLabels);
+      }
+    };
+
+    fetchLabels();
+    fetchOffices();
+
+    // Set up realtime subscription for labels
+    const labelsChannel = supabase
+      .channel('floor-labels-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'floor_labels' },
+        (payload) => {
+          const { floor_id, label_key, label_text } = payload.new as any;
+          setLabels(prev => ({
+            ...prev,
+            [floor_id]: {
+              ...prev[floor_id],
+              [label_key]: label_text
+            }
+          }));
+        }
+      )
+      .subscribe();
+
+    // Set up realtime subscription for offices
+    const officesChannel = supabase
+      .channel('offices-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'offices' },
+        () => {
+          fetchOffices();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(labelsChannel);
+      supabase.removeChannel(officesChannel);
+    };
+  }, [fetchOffices]);
+
+  const updateLabel = async (floorId: string, labelKey: string, newValue: string) => {
+    // 1. Update local state for immediate feedback
+    setLabels(prev => ({
+      ...prev,
+      [floorId]: {
+        ...prev[floorId],
+        [labelKey]: newValue
+      }
+    }));
+
+    // 2. Persist to Supabase
+    const { error } = await supabase
+      .from('floor_labels')
+      .upsert({ 
+        floor_id: floorId, 
+        label_key: labelKey, 
+        label_text: newValue 
+      }, { onConflict: 'floor_id,label_key' });
+
+    if (error) {
+      console.error('Error updating label in Supabase:', error);
+    }
+  };
+
+  // Generate navigation steps based on start and end locations
+  const generateNavigationSteps = (
+    startFloor: string,
+    targetFloor: string,
+    officeId: string,
+    officeName: string,
+    kioskId: string
+  ): NavigationStep[] => {
+    const steps: NavigationStep[] = [];
+    let stepId = 0;
+
+    // Step 1: Start from current position
+    steps.push({
+      id: `step-${stepId++}`,
+      type: 'walk',
+      description: `Start from your current location`,
+      descriptionFil: `Magsimula sa iyong kasalukuyang lokasyon`,
+      floorId: startFloor,
+      completed: false,
+    });
+
+    // If target is on a different floor, add stairs/transition steps
+    if (targetFloor !== startFloor) {
+      const floorNames: Record<string, string> = {
+        basement: 'Basement',
+        first: 'First Floor',
+        second: 'Second Floor',
+        third: 'Third Floor',
+      };
+
+      // Step 2: Walk to stairs
+      steps.push({
+        id: `step-${stepId++}`,
+        type: 'walk',
+        description: `Follow the path to the stairs`,
+        descriptionFil: `Sundin ang daan patungo sa hagdan`,
+        floorId: startFloor,
+        targetPosition: { x: 2.96, y: 0.5, z: 0.5 }, // Stairs position
+        completed: false,
+      });
+
+      // Step 3: Go up/down stairs
+      const direction = targetFloor === 'basement' ? 'down' : 'up';
+      steps.push({
+        id: `step-${stepId++}`,
+        type: 'stairs',
+        description: `Go ${direction} the stairs to ${floorNames[targetFloor]}`,
+        descriptionFil: `Bumaba/pumunta pababa/paakyat sa hagdan patungo sa ${floorNames[targetFloor]}`,
+        floorId: startFloor,
+        completed: false,
+      });
+
+      // Step 4: Floor transition
+      steps.push({
+        id: `step-${stepId++}`,
+        type: 'floor_change',
+        description: `Entering ${floorNames[targetFloor]}`,
+        descriptionFil: `Papasok sa ${floorNames[targetFloor]}`,
+        floorId: targetFloor,
+        completed: false,
+      });
+
+      // Step 5: Continue from stairs entrance
+      steps.push({
+        id: `step-${stepId++}`,
+        type: 'walk',
+        description: `Continue from the stairs entrance`,
+        descriptionFil: `Magpatuloy mula sa pasukan ng hagdan`,
+        floorId: targetFloor,
+        completed: false,
+      });
+    }
+
+    // Final step: Arrive at destination
+    steps.push({
+      id: `step-${stepId++}`,
+      type: 'arrived',
+      description: `You have arrived at ${officeName}`,
+      descriptionFil: `Nakarating ka na sa ${officeName}`,
+      floorId: targetFloor,
+      completed: false,
+    });
+
+    return steps;
+  };
+
+  const startNavigation = (floorId: string, officeId: string, officeName?: string) => {
+    const targetOfficeName = officeName || officeId;
+    
+    // Generate navigation steps
+    const steps = generateNavigationSteps('first', floorId, officeId, targetOfficeName, kioskId);
+    
+    // Create navigation state
+    const newNavigation: NavigationState = {
+      floorId,
+      officeId,
+      officeName: targetOfficeName,
+      steps,
+      currentStepIndex: 0,
+      isActive: true,
+      isTransitioning: false,
+    };
+
+    // Clear any existing navigation and start fresh
+    setNavigation(null);
+    setSelectedFloor('first');
+    
+    // Small delay to ensure clean state
+    setTimeout(() => {
+      setNavigation(newNavigation);
+      
+      // Start camera animation from "You Are Here" position
+      const settings = getKioskSettings(kioskId);
+      const startPos = settings.firstFloorPosition;
+      
+      // Calculate first target (usually the hallway or first waypoint)
+      const firstStep = steps[0];
+      if (firstStep) {
+        startCameraAnimation(
+          { x: startPos[0], y: startPos[1] + 2, z: startPos[2] },
+          { x: startPos[0], y: 0, z: startPos[2] - 2 }
+        );
+      }
+    }, 100);
+  };
+
+  const clearNavigation = () => {
+    setNavigation(null);
+    stopCameraAnimation();
+  };
+
+  const goToNextStep = () => {
+    setNavigation(prev => {
+      if (!prev) return null;
+      const newIndex = Math.min(prev.currentStepIndex + 1, prev.steps.length - 1);
+      return { ...prev, currentStepIndex: newIndex };
+    });
+  };
+
+  const completeCurrentStep = () => {
+    setNavigation(prev => {
+      if (!prev) return null;
+      const updatedSteps = [...prev.steps];
+      if (updatedSteps[prev.currentStepIndex]) {
+        updatedSteps[prev.currentStepIndex] = {
+          ...updatedSteps[prev.currentStepIndex],
+          completed: true,
+        };
+      }
+      return { ...prev, steps: updatedSteps };
+    });
+  };
+
+  const startFloorTransition = () => {
+    setNavigation(prev => prev ? { ...prev, isTransitioning: true } : null);
+  };
+
+  const endFloorTransition = () => {
+    setNavigation(prev => prev ? { ...prev, isTransitioning: false } : null);
+  };
+
+  const startCameraAnimation = (targetPos: { x: number; y: number; z: number }, lookAtPos: { x: number; y: number; z: number }) => {
+    setCameraAnimation({
+      isAnimating: true,
+      targetPosition: targetPos,
+      lookAtPosition: lookAtPos,
+      progress: 0,
+    });
+  };
+
+  const stopCameraAnimation = () => {
+    setCameraAnimation({
+      isAnimating: false,
+      targetPosition: null,
+      lookAtPosition: null,
+      progress: 0,
+    });
+  };
 
   return (
     <KioskContext.Provider value={{ 

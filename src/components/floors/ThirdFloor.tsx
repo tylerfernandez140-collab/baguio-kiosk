@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import ThirdFloorBase, { FloorBaseProps } from './components/ThirdFloorBase';
 import { useKiosk } from '../../context/KioskContext';
 import { getKioskSettings } from '../../config/kioskConfig';
 
@@ -30,10 +31,8 @@ const thirdFloorPathsKiosk2: Record<string, THREE.Vector3[]> = {
   ...thirdFloorPaths
 };
 
-import FloorBase from './core/FloorBase';
-
 export default function ThirdFloor(
-  props: any
+  props: Omit<FloorBaseProps, 'floorId' | 'url' | 'labels' | 'offset'>
 ) {
   const { kioskId, labels } = useKiosk();
   const settings = getKioskSettings(kioskId);
@@ -41,7 +40,7 @@ export default function ThirdFloor(
   const paths = kioskId === 'kiosk_2' ? thirdFloorPathsKiosk2 : thirdFloorPaths;
 
   return (
-    <FloorBase
+    <ThirdFloorBase
       floorId="third"
       url="/models/attic.glb"
       offset={[0, 0, 0]}

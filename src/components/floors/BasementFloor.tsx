@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import BasementFloorBase, { FloorBaseProps } from './components/BasementFloorBase';
 import { useKiosk } from '../../context/KioskContext';
 
 
@@ -93,15 +94,13 @@ const basementPaths: Record<string, THREE.Vector3[]> = {
   ],
 };
 
-import FloorBase from './core/FloorBase';
-
 export default function BasementFloor(
-  props: any
+  props: Omit<FloorBaseProps, 'floorId' | 'url' | 'labels' | 'offset' | 'predefinedPaths'>
 ) {
   const { labels } = useKiosk();
 
   return (
-    <FloorBase
+    <BasementFloorBase
       floorId="basement"
       url="/models/basement.glb"
       offset={[0, 0, 0]}
