@@ -3,15 +3,30 @@ import { useKiosk } from '@/context/KioskContext';
 import { translations, cityHallFloors, type Office } from '@/data/kioskData';
 import { ArrowLeft, Phone, Clock, User, MapPin, ChevronRight } from 'lucide-react';
 
+interface OfficeData {
+  id: string;
+  name: string;
+  name_fil?: string;
+  description: string;
+  description_fil?: string;
+  floor_id: string;
+  room?: string;
+  contact?: string;
+  hours?: string;
+  officer?: string;
+  services?: string[];
+  services_fil?: string[];
+}
+
 interface DirectoryProps {
   onBack: () => void;
-  onSelectOffice?: (office: Office) => void;
+  onSelectOffice?: (office: OfficeData) => void;
 }
 
 const Directory = ({ onBack, onSelectOffice }: DirectoryProps) => {
   const { language, offices } = useKiosk();
   const t = translations[language];
-  const [selectedOffice, setSelectedOffice] = useState<any | null>(null);
+  const [selectedOffice, setSelectedOffice] = useState<OfficeData | null>(null);
   // Group offices by floor
   const floorOrder = ['basement', 'first', 'second', 'third'];
   const floors = Array.from(new Set(offices.map(o => o.floor_id))).sort((a, b) => 
