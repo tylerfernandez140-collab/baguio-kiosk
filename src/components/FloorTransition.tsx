@@ -45,10 +45,10 @@ export function FloorTransitionOverlay({
           }, 800);
           
           return () => clearTimeout(fadeInTimer);
-        }, 1500);
+        }, 2000); // Increased hold time
         
         return () => clearTimeout(transitionTimer);
-      }, 600);
+      }, 1000); // Increased fade-out wait
       
       return () => clearTimeout(fadeOutTimer);
     }

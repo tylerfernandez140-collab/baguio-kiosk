@@ -1,7 +1,29 @@
 import * as THREE from 'three';
+import { Html } from '@react-three/drei';
+import { MapPin } from 'lucide-react';
 import SecondFloorBase, { FloorBaseProps } from './components/SecondFloorBase';
 import { useKiosk } from '../../context/KioskContext';
 import { getKioskSettings } from '../../config/kioskConfig';
+
+function YouAreHere({ position }: { position: [number, number, number] | THREE.Vector3 }) {
+  const pos = Array.isArray(position) ? position : [position.x, position.y, position.z];
+  return (
+    <Html position={pos as [number, number, number]} center>
+      <div className="flex flex-col items-center">
+        <div className="bg-blue-600 text-white px-2 py-1 rounded-full text-[10px] font-bold shadow-lg mb-1 whitespace-nowrap animate-bounce">
+          STAIRS LANDING
+        </div>
+        <div className="relative">
+          <MapPin className="w-8 h-8 text-blue-600 filter drop-shadow-md" />
+          <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-4 h-1 bg-black/20 rounded-full blur-[2px]"></div>
+        </div>
+      </div>
+    </Html>
+  );
+}
+
+// Landing point from first floor stairs
+const STAIRS_LANDING = new THREE.Vector3(2.14, 0.01, -0.14);
 
 // Comprehensive labels for all detected second floor office meshes
 
@@ -303,7 +325,7 @@ const secondFloorPathsKiosk2: Record<string, THREE.Vector3[]> = {
 export default function SecondFloor(
   props: Omit<FloorBaseProps, 'floorId' | 'url' | 'labels' | 'offset'>
 ) {
-  const { kioskId, labels } = useKiosk();
+  const { kioskId, labels, navigation } = useKiosk();
   const settings = getKioskSettings(kioskId);
 
   const paths = kioskId === 'kiosk_2' ? secondFloorPathsKiosk2 : secondFloorPaths;
@@ -320,6 +342,11 @@ export default function SecondFloor(
         CANTEEN: [-8.56, 0.03, -1.56]
       }}
       {...props}
-    />
+    >
+      {/* Show landing marker only during navigation when on this floor */}
+      {navigation?.isActive && navigation.floorId === 'second' && (
+        <YouAreHere position={STAIRS_LANDING} />
+      )}
+    </SecondFloorBase>
   );
 }

@@ -14,7 +14,7 @@ function Model({
 }: {
   url: string;
   offset?: [number, number, number];
-  onSelectOffice?: (name: string, position: THREE.Vector3) => void;
+  onSelectOffice?: (name: string | null, position: THREE.Vector3) => void;
   onLoadMarkers?: (
     markers: { 
       name: string; 
@@ -31,8 +31,6 @@ function Model({
     event.stopPropagation();
 
     // Iterate through ALL ray intersections to find the first clickable office.
-    // This fixes offices (e.g. COUN5, COUN6, COUN7, POSD) that are blocked by
-    // overlapping non-clickable geometry (walls, ceilings, floor slabs).
     const intersections = event.intersections || [{ object: event.object }];
 
     for (const intersection of intersections) {
@@ -42,7 +40,10 @@ function Model({
         ignored => name.includes(ignored)
       );
 
-      if (isBase) continue; // Skip base geometry, check next intersection
+      if (isBase) {
+        onSelectOffice?.(null, new THREE.Vector3());
+        return;
+      }
 
       const box = new THREE.Box3().setFromObject(clickedObject);
       const center = new THREE.Vector3();
@@ -189,6 +190,7 @@ function Model({
     <primitive
       object={wrapper}
       onClick={handleClick}
+      onPointerMissed={() => onSelectOffice?.(null, new THREE.Vector3())}
     />
   );
 }
@@ -262,7 +264,7 @@ function CoordinateDetector() {
 }
 
 function AnimatedPath({ points }: { points: THREE.Vector3[] }) {
-  const [arrows, setArrows] = useState<{ position: THREE.Vector3; rotation: THREE.Euler }[]>([]);
+  const [arrows, setArrows] = useState<{ position: THREE.Vector3; rotation: THREE.Euler; opacity: number }[]>([]);
   const lineRef = useRef<any>(null);
   
   // Calculate segments and total length
@@ -275,7 +277,7 @@ function AnimatedPath({ points }: { points: THREE.Vector3[] }) {
       const direction = new THREE.Vector3().subVectors(end, start).normalize();
       
       // Calculate rotation for arrows
-      const rotation = new THREE.Euler(0, Math.atan2(direction.x, direction.z) + Math.PI / 2, 0);
+      const rotation = new THREE.Euler(0, Math.atan2(direction.x, direction.z), 0);
       
       segs.push({ start, end, length, direction, rotation });
     }
@@ -286,28 +288,60 @@ function AnimatedPath({ points }: { points: THREE.Vector3[] }) {
 
   useFrame((state) => {
     const time = state.clock.getElapsedTime();
-    const arrowCount = Math.max(5, Math.floor(totalLength * 3)); // 3 arrows per unit length
+    const arrowSpacing = 1.5; 
     const speed = 1.5;
+    const fadeZone = 0.6; // Distance for fade-in at start and fade-out at end
+    
+    // Calculate how many arrows fit without overlapping
+    const arrowCount = Math.max(1, Math.floor(totalLength / arrowSpacing));
     
     const newArrows = [];
     for (let i = 0; i < arrowCount; i++) {
-      // Progress from 0 to 1, offset by time and index
-      const progress = ((time * speed + (i / arrowCount) * totalLength) % totalLength) / totalLength;
-      const targetDist = progress * totalLength;
+      // Improved distribution logic with a small starting offset
+      const animatedDist = (i * arrowSpacing + time * speed) % totalLength;
       
-      // Find which segment the arrow is in
+      const targetDist = animatedDist;
+      let opacity = 1;
+      
+      // Smooth fade-in at the beginning of the path
+      if (targetDist < fadeZone) {
+        opacity = Math.min(1, targetDist / fadeZone);
+      }
+      // Smooth fade-out at the end of the path
+      else if (targetDist > totalLength - fadeZone) {
+        opacity = Math.min(1, (totalLength - targetDist) / fadeZone);
+      }
+      
+      // Find which segment the arrow is in and handle rotation smoothing
       let currentDist = 0;
-      let found = false;
-      for (const seg of segments) {
+      for (let j = 0; j < segments.length; j++) {
+        const seg = segments[j];
         if (targetDist >= currentDist && targetDist <= currentDist + seg.length) {
           const segProgress = (targetDist - currentDist) / seg.length;
           const pos = new THREE.Vector3().lerpVectors(seg.start, seg.end, segProgress);
           
-          // Lift arrow slightly above the line
-          pos.y += 0.05;
+          // Rotation smoothing logic
+          let targetRotationY = seg.rotation.y;
+          const smoothingDist = 0.4; 
           
-          newArrows.push({ position: pos, rotation: seg.rotation });
-          found = true;
+          if (seg.length - (targetDist - currentDist) < smoothingDist && j < segments.length - 1) {
+            const nextSeg = segments[j + 1];
+            const mix = (smoothingDist - (seg.length - (targetDist - currentDist))) / smoothingDist;
+            
+            let nextRot = nextSeg.rotation.y;
+            while (nextRot - targetRotationY > Math.PI) nextRot -= Math.PI * 2;
+            while (nextRot - targetRotationY < -Math.PI) nextRot += Math.PI * 2;
+            
+            targetRotationY = targetRotationY + (nextRot - targetRotationY) * mix;
+          }
+          
+          pos.y += 0.07;
+          
+          newArrows.push({ 
+            position: pos, 
+            rotation: new THREE.Euler(0, targetRotationY, 0), 
+            opacity 
+          });
           break;
         }
         currentDist += seg.length;
@@ -320,16 +354,34 @@ function AnimatedPath({ points }: { points: THREE.Vector3[] }) {
     <>
       <Line
         points={points}
-        color="#3b82f6"
-        lineWidth={6}
+        color="#dc2626"
+        lineWidth={2}
         transparent
-        opacity={0.6}
+        opacity={0.2}
       />
       {arrows.map((arrow, i) => (
-        <mesh key={`arrow-${i}`} position={arrow.position} rotation={arrow.rotation}>
-          <coneGeometry args={[0.08, 0.2, 4]} />
-          <meshBasicMaterial color="#ffffff" transparent opacity={0.9} />
-        </mesh>
+        <group key={`arrow-${i}`} position={arrow.position} rotation={[0, arrow.rotation.y, 0]}>
+          {/* Red arrow shaft - flat on ground pointing along Z */}
+          <mesh position={[0, 0.01, 0.15]} rotation={[0, 0, 0]}>
+            <boxGeometry args={[0.12, 0.02, 0.3]} />
+            <meshBasicMaterial color="#dc2626" transparent opacity={0.95 * arrow.opacity} />
+          </mesh>
+          {/* Red arrow head - flat on ground, touching the shaft, pointing forward */}
+          <mesh position={[0, 0.01, 0.3]} rotation={[Math.PI / 2, 0, 0]}>
+            <coneGeometry args={[0.15, 0.28, 3]} />
+            <meshBasicMaterial color="#dc2626" transparent opacity={0.95 * arrow.opacity} />
+          </mesh>
+          
+          {/* Darker red inner arrow */}
+          <mesh position={[0, 0.012, 0.15]} rotation={[0, 0, 0]}>
+            <boxGeometry args={[0.09, 0.02, 0.26]} />
+            <meshBasicMaterial color="#991b1b" transparent opacity={0.9 * arrow.opacity} />
+          </mesh>
+          <mesh position={[0, 0.012, 0.3]} rotation={[Math.PI / 2, 0, 0]}>
+            <coneGeometry args={[0.11, 0.24, 3]} />
+            <meshBasicMaterial color="#991b1b" transparent opacity={0.9 * arrow.opacity} />
+          </mesh>
+        </group>
       ))}
     </>
   );
@@ -434,7 +486,7 @@ export default function FloorBase({
   }, [navigation, floorId, predefinedPaths]);
 
   const handleGetDirection = (officeName: string) => {
-    startNavigation(floorId, officeName);
+    startNavigation(floorId, officeName, getOfficeLabel(officeName));
   };
 
   const getOfficeLabel = (name: string) => {
@@ -456,7 +508,7 @@ export default function FloorBase({
       <Model
         url={url}
         offset={offset}
-        onSelectOffice={(name, position) => setSelectedOffice({ name, position })}
+        onSelectOffice={(name: string | null, position: THREE.Vector3) => name ? setSelectedOffice({ name, position }) : setSelectedOffice(null)}
         onLoadMarkers={setOfficeMarkers}
       />
       
@@ -489,7 +541,7 @@ export default function FloorBase({
         </Html>
       ))}
       
-      {!hideLabels && selectedOffice && (
+      {!hideLabels && selectedOffice && (!navigation?.isActive || navigation.steps[navigation.currentStepIndex]?.type === 'arrived') && (
         <Html
           position={[
             selectedOffice.position.x,
@@ -498,7 +550,7 @@ export default function FloorBase({
           ]}
           center
         >
-          <div className="relative">
+          <div className="relative pointer-events-auto" onClick={(e) => e.stopPropagation()}>
             <div className="bg-red-500 rounded relative shadow-lg flex flex-col items-center justify-center px-3 py-2 min-w-[120px]">
               <span className="text-white text-sm font-bold text-center leading-tight whitespace-pre-line mb-2">
                 {getOfficeLabel(selectedOffice.name).toUpperCase()}
@@ -507,7 +559,7 @@ export default function FloorBase({
               {predefinedPaths[Object.keys(predefinedPaths).find(key => key.toLowerCase() === selectedOffice.name.toLowerCase()) || ""] && (
                 <button
                   onClick={() => handleGetDirection(selectedOffice.name)}
-                  className="bg-white text-red-500 text-[10px] font-bold px-3 py-1 rounded-full hover:bg-red-50 hover:scale-105 transition-all w-full pointer-events-auto shadow-md"
+                  className="bg-white text-red-500 text-[10px] font-bold px-3 py-1 rounded-full hover:bg-red-50 hover:scale-105 transition-all w-full shadow-md"
                 >
                   GET DIRECTION
                 </button>

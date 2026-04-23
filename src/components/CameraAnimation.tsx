@@ -98,17 +98,31 @@ export function CameraAnimation({
   }, [navigation, camera, controls, DEFAULT_CAMERA_POS, DEFAULT_CAMERA_TARGET]);
 
   // Initialize navigation sequence when active
+  const lastPathRef = useRef<THREE.Vector3[] | null>(null);
+  
   useEffect(() => {
     if (!navigation?.isActive || !enabled || !path || path.length < 2) {
       if (!navigation) {
-        // Will be handled by the effect above
         return;
       }
       setCameraMode('overview');
       animationRef.current = null;
       walkingRef.current = null;
+      lastPathRef.current = null;
       return;
     }
+
+    // Only re-initialize if the path has actually changed significantly
+    // (e.g. switching floors or starting new navigation)
+    const isSamePath = lastPathRef.current && 
+                      lastPathRef.current.length === path.length && 
+                      lastPathRef.current[0].distanceTo(path[0]) < 0.1;
+    
+    if (isSamePath && walkingRef.current) {
+      return;
+    }
+    
+    lastPathRef.current = path;
 
     const settings = getKioskSettings(kioskId);
     const startPos = new THREE.Vector3(

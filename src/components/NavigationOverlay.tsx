@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { MoveVertical } from 'lucide-react';
 import { useKiosk } from '../context/KioskContext';
 
@@ -14,7 +14,7 @@ export function NavigationOverlay() {
     endFloorTransition,
   } = useKiosk();
   
-  const [showFloorTransition, setShowFloorTransition] = useState(false);
+  const transitionLockRef = useRef(false);
 
   // Handle floor transitions automatically
   useEffect(() => {
@@ -36,20 +36,25 @@ export function NavigationOverlay() {
     }
 
     // Check if we need to switch floors
-    if (currentStep.floorId !== selectedFloor && !navigation.isTransitioning) {
+    if (currentStep.floorId !== selectedFloor && !navigation.isTransitioning && !transitionLockRef.current) {
+      console.log(`Auto-switching floor: ${selectedFloor} -> ${currentStep.floorId}`);
+      transitionLockRef.current = true;
       startFloorTransition();
-      setShowFloorTransition(true);
       
-      // Fade out, switch floor, fade in
+      // Synchronize with FloorTransitionOverlay durations - added extra buffer
       setTimeout(() => {
         setSelectedFloor(currentStep.floorId);
         
         setTimeout(() => {
-          setShowFloorTransition(false);
           endFloorTransition();
           completeCurrentStep();
-        }, 800);
-      }, 600);
+          
+          // Keep the lock for a bit longer to prevent immediate double-switching
+          setTimeout(() => {
+            transitionLockRef.current = false;
+          }, 1000);
+        }, 2000); // Wait longer during the transition screen
+      }, 1000); // Give more time for the initial fade-out
     }
   }, [navigation?.currentStepIndex, navigation?.isActive, navigation?.steps, selectedFloor]);
 
@@ -68,25 +73,6 @@ export function NavigationOverlay() {
   const handleSkipToFloor = (floorId: string) => {
     setSelectedFloor(floorId);
   };
-
-  // Floor transition overlay
-  if (showFloorTransition) {
-    return (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black transition-opacity duration-500">
-        <div className="text-center animate-pulse">
-          <MoveVertical className="w-16 h-16 text-white mx-auto mb-4" />
-          <p className="text-white text-xl font-bold">
-            {language === 'en' ? 'Changing Floor...' : 'Nagpapalit ng Palapag...'}
-          </p>
-          <p className="text-white/70 text-sm mt-2">
-            {language === 'en' 
-              ? `Going to ${currentStep?.floorId || 'destination'}` 
-              : `Papunta sa ${currentStep?.floorId || 'destinasyon'}`}
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   // Auto-navigation mode - no UI, just handle step progression in background
   return null;
