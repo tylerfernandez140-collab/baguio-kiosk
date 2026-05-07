@@ -1,11 +1,14 @@
 import { useState, useRef, Suspense, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Stage, useGLTF, Html } from '@react-three/drei';
 import { Map, Building, Users, FileText, Calendar, Phone, Info, Home, AlertTriangle, Search, X, RotateCcw, CheckCircle } from 'lucide-react';
 import { useKiosk } from '@/context/KioskContext';
+import { getOfficeImageFilename } from '@/data/floorLabels';
 import ErrorBoundary from './ErrorBoundary';
 import { FloorTransitionOverlay, FloorTransitionIndicator } from './FloorTransition';
 import { NavigationOverlay } from './NavigationOverlay';
+import GetDirection from './GetDirection';
 import * as THREE from 'three';
 
 import FirstFloor from './floors/FirstFloor';
@@ -23,28 +26,28 @@ useGLTF.preload('/models/basement.glb');
 const floors = [
   {
     id: 'first',
-    name: 'FIRST FLOOR',
+    name: 'First Floor',
     model: '/models/first_floor.glb',
     description: 'Public Services & Reception',
     offset: [0, 0, 0],
   },
   {
     id: 'second',
-    name: 'SECOND FLOOR',
+    name: 'Second Floor',
     model: '/models/sekand_floor.glb',
     description: 'City Council & Chambers',
     offset: [0, 0, 0],
   },
   {
     id: 'third',
-    name: 'THIRD FLOOR',
+    name: 'Third Floor',
     model: '/models/attic.glb',
     description: 'Administrative Offices',
     offset: [0, 0, 0],
   },
   {
     id: 'basement',
-    name: 'BASEMENT',
+    name: 'Basement',
     model: '/models/basement.glb',
     description: 'Parking & Facilities',
     offset: [0, 0, 0],
@@ -89,14 +92,55 @@ const categories = [
 
 interface CityHallDirectoryProps {
   onNavigate: (page: string) => void;
+  selectedOffice?: { id: string; name: string; floor: string } | null;
+  setSelectedOffice?: (office: { id: string; name: string; floor: string } | null) => void;
 }
 
-const CityHallDirectory = ({ onNavigate }: CityHallDirectoryProps) => {
+// Component to display office image from Supabase in the side panel
+function OfficeDetailImage({ officeId, floorId, alt }: { officeId: string; floorId: string; alt: string }) {
+  const { offices, labels } = useKiosk();
+  
+  // Get the display label from floor_labels
+  const displayLabel = labels[floorId]?.[officeId] || labels[floorId]?.[officeId.toLowerCase()];
+  
+  // Find office in Supabase data by matching offices.name with floor_labels.label_text
+  const officeData = offices.find(o => {
+    if (o.floor_id !== floorId) return false;
+    if (displayLabel && o.name === displayLabel) return true;
+    if (o.name?.toLowerCase() === officeId.toLowerCase()) return true;
+    return false;
+  });
+  
+  // Use Supabase image_url if available, otherwise fallback to local image
+  const imageUrl = officeData?.image_url || `/${getOfficeImageFilename(officeId)}.jpg`;
+  
+  return (
+    <div className="w-full h-48 rounded-lg overflow-hidden mb-4 bg-gray-100 dark:bg-gray-700">
+      <img
+        key={imageUrl}
+        src={imageUrl}
+        alt={alt}
+        className="w-full h-full object-cover"
+        onError={(e) => {
+          (e.target as HTMLImageElement).style.display = 'none';
+        }}
+      />
+    </div>
+  );
+}
+
+const CityHallDirectoryInternal = ({ onNavigate, selectedOffice: propSelectedOffice, setSelectedOffice: propSetSelectedOffice }: CityHallDirectoryProps) => {
   const { language, theme, selectedFloor, setSelectedFloor, startNavigation, clearNavigation, navigation, labels } = useKiosk();
   const [selectedCategory, setSelectedCategory] = useState('maps');
   const [autoRotate, setAutoRotate] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [selectedOffice, setSelectedOffice] = useState<{ id: string; name: string; floor: string } | null>(null);
+  const [showGetDirection, setShowGetDirection] = useState(false);
+  
+  // Use props if available, otherwise use local state
+  const currentSelectedOffice = propSelectedOffice !== undefined ? propSelectedOffice : selectedOffice;
+  const currentSetSelectedOffice = propSetSelectedOffice || setSelectedOffice;
   const timeoutRef = useRef<NodeJS.Timeout>();
   const interactionTimeoutRef = useRef<NodeJS.Timeout>();
   const controlsRef = useRef<any>(null);
@@ -117,6 +161,36 @@ const CityHallDirectory = ({ onNavigate }: CityHallDirectoryProps) => {
     startNavigation(office.floor, office.id, office.name);
     setIsSearchOpen(false);
     setSearchQuery('');
+  };
+
+  const handleOfficeClick = (officeId: string, floorId: string, displayName?: string) => {
+    if (!navigation?.isActive) {
+      currentSetSelectedOffice({ id: officeId, name: displayName || officeId, floor: floorId });
+      setShowGetDirection(true);
+    }
+  };
+
+  const handleGetDirectionClick = () => {
+    if (currentSelectedOffice) {
+      setSelectedFloor(currentSelectedOffice.floor);
+      // Use the raw office ID directly for navigation
+      startNavigation(currentSelectedOffice.floor, currentSelectedOffice.id, currentSelectedOffice.name);
+      setShowGetDirection(false);
+      currentSetSelectedOffice(null);
+    }
+  };
+
+  const handleGetDirectionClose = () => {
+    setShowGetDirection(false);
+    currentSetSelectedOffice(null);
+  };
+
+  const handleCanvasClick = () => {
+    if (navigation?.isActive) {
+      clearNavigation();
+    }
+    setShowGetDirection(false);
+    currentSetSelectedOffice(null);
   };
 
   const currentFloor = floors.find(f => f.id === selectedFloor);
@@ -164,7 +238,7 @@ const CityHallDirectory = ({ onNavigate }: CityHallDirectoryProps) => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex">
       {/* Left Sidebar - Floor Selection */}
-      <div className="w-24 bg-green-700 shadow-lg flex flex-col items-center py-4 space-y-3">
+      <div className="w-24 flex-shrink-0 bg-green-700 shadow-lg flex flex-col items-center py-4 space-y-3">
         {/* Time Display */}
         <div className="text-white text-xs text-center mb-4">
           <div className="font-bold uppercase">{formatTime(currentTime)}</div>
@@ -183,7 +257,7 @@ const CityHallDirectory = ({ onNavigate }: CityHallDirectoryProps) => {
                 : 'bg-green-600 text-white hover:bg-green-800'
             }`}
           >
-            {floor.name.split(' ')[0]}
+            {floor.name}
           </button>
         ))}
       </div>
@@ -233,12 +307,7 @@ const CityHallDirectory = ({ onNavigate }: CityHallDirectoryProps) => {
               onTouchEnd={handleCanvasInteraction}
               onWheel={handleCanvasInteraction}
               onPointerMissed={() => {
-                console.log('Pointer missed');
-              }}
-              onClick={(e) => {
-                console.log('Canvas clicked directly:', e);
-                // Force handleCanvasInteraction to be called
-                handleCanvasInteraction(e);
+                handleCanvasClick();
               }}
             >
               <color attach="background" args={['#F5F5DC']} />
@@ -262,29 +331,44 @@ const CityHallDirectory = ({ onNavigate }: CityHallDirectoryProps) => {
                   adjustCamera={false}
                 >
                   {currentFloor?.id === 'first' && (
-                    <FirstFloor hideLabels={isSearchOpen} />
+                    <FirstFloor 
+                      hideLabels={isSearchOpen} 
+                      onOfficeClick={handleOfficeClick}
+                      selectedOffice={currentSelectedOffice?.id || null}
+                    />
                   )}
                   {currentFloor?.id === 'second' && (
-                    <SecondFloor hideLabels={isSearchOpen} />
+                    <SecondFloor 
+                      hideLabels={isSearchOpen} 
+                      onOfficeClick={handleOfficeClick}
+                      selectedOffice={currentSelectedOffice?.id || null}
+                    />
                   )}
                   {currentFloor?.id === 'third' && (
-                    <ThirdFloor hideLabels={isSearchOpen} />
+                    <ThirdFloor 
+                      hideLabels={isSearchOpen} 
+                      onOfficeClick={handleOfficeClick}
+                      selectedOffice={currentSelectedOffice?.id || null}
+                    />
                   )}
                   {currentFloor?.id === 'basement' && (
-                    <BasementFloor hideLabels={isSearchOpen} />
+                    <BasementFloor 
+                      hideLabels={isSearchOpen} 
+                      onOfficeClick={handleOfficeClick}
+                      selectedOffice={currentSelectedOffice?.id || null}
+                    />
                   )}
                 </Stage>
-                <OrbitControls 
+<OrbitControls
                   ref={controlsRef}
-                  key={autoRotate ? 'rotating' : 'static'}
-                  enablePan={true}
-                  panSpeed={1}
-                  minDistance={1}
-                  maxDistance={50}
                   autoRotate={autoRotate}
                   autoRotateSpeed={0.5}
                   enableDamping
                   dampingFactor={0.1}
+                  enablePan={true}
+                  panSpeed={1}
+                  minDistance={0.5}
+                  maxDistance={100}
                   enableZoom={true}
                   zoomSpeed={1}
                   rotateSpeed={1}
@@ -296,13 +380,15 @@ const CityHallDirectory = ({ onNavigate }: CityHallDirectoryProps) => {
             </Canvas>
           </ErrorBoundary>
           
-          {/* Floor Name Overlay */}
-          <div className="absolute top-8 left-8 bg-white/90 dark:bg-gray-800/90 rounded-lg px-6 py-3 shadow-lg">
-            <h2 className="text-2xl font-bold text-gray-800 dark:text-white">
-              {currentFloor?.name}
-            </h2>
-          </div>
-
+          {/* Get Direction Component - appears at top when office is selected */}
+          {showGetDirection && currentSelectedOffice && !navigation?.isActive && selectedFloor === currentSelectedOffice.floor && (
+            <GetDirection
+              onGetDirection={handleGetDirectionClick}
+              onClose={handleGetDirectionClose}
+            />
+          )}
+          
+          
           {/* Search Bar / Modal in Upper Right */}
           <div className="absolute top-8 right-8 z-50">
             {!isSearchOpen ? (
@@ -429,6 +515,67 @@ const CityHallDirectory = ({ onNavigate }: CityHallDirectoryProps) => {
   );
 };
 
+// Office Details Portal - renders outside Three.js context
+function OfficeDetailsPortal({ selectedOffice, selectedFloor, language }: { 
+  selectedOffice: { id: string; name: string; floor: string } | null; 
+  selectedFloor: string; 
+  language: string;
+}) {
+  if (!selectedOffice || selectedFloor !== selectedOffice.floor) return null;
+  
+  return createPortal(
+    <div className="fixed top-24 left-32 w-72 bg-white dark:bg-gray-800 shadow-2xl rounded-xl flex flex-col z-[2147483647] animate-fade-in border border-gray-200 dark:border-gray-700">
+      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+        <h3 className="text-lg font-bold text-gray-800 dark:text-white">
+          {language === 'en' ? 'Office Details' : 'Detalye ng Opisina'}
+        </h3>
+      </div>
+      
+      <div className="p-4">
+        {/* Office Image */}
+        <OfficeDetailImage 
+          officeId={selectedOffice.id} 
+          floorId={selectedOffice.floor}
+          alt={selectedOffice.name}
+        />
+        
+        {/* Office Name */}
+        <h4 className="text-xl font-bold text-gray-800 dark:text-white mb-2">
+          {selectedOffice.name}
+        </h4>
+        
+        {/* Floor Info */}
+        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+          <Building className="w-4 h-4" />
+          <span className="capitalize">{selectedOffice.floor.replace('_', ' ')} Floor</span>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+// Main component wrapper that includes both the directory and portal
+export default function CityHallDirectory(props: CityHallDirectoryProps) {
+  const { language, selectedFloor } = useKiosk();
+  const [selectedOffice, setSelectedOffice] = useState<{ id: string; name: string; floor: string } | null>(null);
+  
+  return (
+    <>
+      <CityHallDirectoryInternal 
+        {...props}
+        selectedOffice={selectedOffice}
+        setSelectedOffice={setSelectedOffice}
+      />
+      <OfficeDetailsPortal 
+        selectedOffice={selectedOffice}
+        selectedFloor={selectedFloor}
+        language={language}
+      />
+    </>
+  );
+}
+
 // Navigation Complete Popup Component
 interface NavigationCompletePopupProps {
   navigation: {
@@ -449,13 +596,14 @@ function NavigationCompletePopup({ navigation, onRepeat, onDone }: NavigationCom
   const currentStep = navigation.steps[navigation.currentStepIndex];
   const { selectedFloor } = useKiosk();
   const hasArrived = currentStep?.type === 'arrived' && 
+                    currentStep.completed && 
                     currentStep.floorId === selectedFloor && 
                     !navigation.isTransitioning;
   
   if (!hasArrived) return null;
 
   return (
-    <div className="fixed top-[100px] left-[130px] z-[2147483647] pointer-events-none animate-fade-in" style={{ isolation: 'isolate' }}>
+    <div className="fixed top-[40px] left-[130px] z-[2147483647] pointer-events-none animate-fade-in" style={{ isolation: 'isolate' }}>
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-3 max-w-[240px] w-full text-center border-2 border-green-500 relative z-10 pointer-events-auto">
         {/* Success Icon */}
         <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-1 font-bold text-green-600">
@@ -491,4 +639,3 @@ function NavigationCompletePopup({ navigation, onRepeat, onDone }: NavigationCom
   );
 }
 
-export default CityHallDirectory;

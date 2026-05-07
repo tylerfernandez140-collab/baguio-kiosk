@@ -4,6 +4,40 @@ import { Html, useGLTF, Line } from '@react-three/drei';
 import { useThree, useFrame } from '@react-three/fiber';
 import { useKiosk } from '../../../context/KioskContext';
 import CameraAnimation from '../../CameraAnimation';
+import { getOfficeImageFilename } from '../../../data/floorLabels';
+
+// Component to display office image from Supabase or fallback to local
+function OfficeImage({ officeId, floorId, alt, offices, labels }: { officeId: string; floorId: string; alt: string; offices: any[]; labels: Record<string, string> }) {
+  // Get the display label from floor_labels (label_text) using the 3D object name
+  const displayLabel = labels[officeId] || labels[officeId.toLowerCase()];
+  
+  // Find office in Supabase data by matching offices.name with floor_labels.label_text
+  const officeData = offices.find(o => {
+    if (o.floor_id !== floorId) return false;
+    // Match against the display label (label_text)
+    if (displayLabel && o.name === displayLabel) return true;
+    // Fallback: try direct match
+    if (o.name?.toLowerCase() === officeId.toLowerCase()) return true;
+    return false;
+  });
+  
+  // Use Supabase image_url if available, otherwise fallback to local image
+  const imageUrl = officeData?.image_url || `/${getOfficeImageFilename(officeId)}.jpg`;
+  
+  return (
+    <img
+      key={imageUrl}
+      src={imageUrl}
+      alt={alt}
+      className="w-full h-24 object-cover rounded mb-2"
+      style={{ display: 'block' }}
+      onError={(e) => {
+        console.error('Image failed to load:', imageUrl);
+        (e.target as HTMLImageElement).style.display = 'none';
+      }}
+    />
+  );
+}
 
 // 3D Model Component with proper material handling and centering
 function Model({
@@ -395,6 +429,8 @@ export interface FloorBaseProps {
   labelSize?: number;
   customLabelPositions?: Record<string, [number, number, number]>;
   hideLabels?: boolean;
+  onOfficeClick?: (officeId: string, floorId: string, displayName?: string) => void;
+  selectedOffice?: string | null;
 }
 
 export default function FloorBase({
@@ -407,8 +443,10 @@ export default function FloorBase({
   labelSize = 5,
   customLabelPositions = {},
   hideLabels = false,
+  onOfficeClick,
+  selectedOffice: selectedOfficeProp,
 }: FloorBaseProps) {
-  const { navigation, startNavigation } = useKiosk();
+  const { navigation, startNavigation, clearNavigation, offices } = useKiosk();
   const [officeMarkers, setOfficeMarkers] = useState<{ name: string; position: THREE.Vector3 }[]>([]);
   const [selectedOffice, setSelectedOffice] = useState<{
     name: string;
@@ -477,7 +515,23 @@ export default function FloorBase({
       <Model
         url={url}
         offset={offset}
-        onSelectOffice={(name: string | null, position: THREE.Vector3) => name ? setSelectedOffice({ name, position }) : setSelectedOffice(null)}
+        onSelectOffice={(name: string | null, position: THREE.Vector3) => {
+        if (navigation?.isActive) {
+          // If navigation is active, only allow clearing by clicking empty space
+          if (!name) {
+            setSelectedOffice(null);
+          }
+        } else {
+          // If navigation is not active, allow selecting any office
+          if (name) {
+            setSelectedOffice({ name, position });
+            // Call the onOfficeClick prop with raw object name and display label
+            onOfficeClick?.(name, floorId, getOfficeLabel(name));
+          } else {
+            setSelectedOffice(null);
+          }
+        }
+      }}
         onLoadMarkers={setOfficeMarkers}
       />
       
@@ -489,7 +543,7 @@ export default function FloorBase({
               ? customLabelPositions[office.name] 
               : [
                   office.position.x,
-                  office.position.y + 0.03,
+                  office.position.y + 0.15,
                   office.position.z,
                 ]
           }
@@ -510,35 +564,6 @@ export default function FloorBase({
         </Html>
       ))}
       
-      {!hideLabels && selectedOffice && (!navigation?.isActive || navigation.steps[navigation.currentStepIndex]?.type === 'arrived') && (
-        <Html
-          position={[
-            selectedOffice.position.x,
-            selectedOffice.position.y + 0.8,
-            selectedOffice.position.z,
-          ]}
-          center
-        >
-          <div className="relative pointer-events-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="bg-red-500 rounded relative shadow-lg flex flex-col items-center justify-center px-3 py-2 min-w-[120px]">
-              <span className="text-white text-sm font-bold text-center leading-tight whitespace-pre-line mb-2">
-                {getOfficeLabel(selectedOffice.name).toUpperCase()}
-              </span>
-              
-              {predefinedPaths[Object.keys(predefinedPaths).find(key => key.toLowerCase() === selectedOffice.name.toLowerCase()) || ""] && (
-                <button
-                  onClick={() => handleGetDirection(selectedOffice.name)}
-                  className="bg-white text-red-500 text-[10px] font-bold px-3 py-1 rounded-full hover:bg-red-50 hover:scale-105 transition-all w-full shadow-md"
-                >
-                  GET DIRECTION
-                </button>
-              )}
-            </div>
-            <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[12px] border-t-red-500"></div>
-          </div>
-        </Html>
-      )}
-      
       {activePath && (
         <AnimatedPath points={activePath} />
       )}
@@ -551,7 +576,6 @@ export default function FloorBase({
       />
       
       {children}
-      <CoordinateDetector />
     </>
   );
 }

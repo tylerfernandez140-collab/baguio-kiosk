@@ -7,16 +7,16 @@ import FirstFloorBase, { FloorBaseProps } from './components/FirstFloorBase';
 
 
 
-function YouAreHere({ position, label = 'YOU ARE HERE' }: { position: [number, number, number] | THREE.Vector3, label?: string }) {
+function YouAreHere({ position, label = 'YOU ARE HERE', isStairs = false }: { position: [number, number, number] | THREE.Vector3, label?: string, isStairs?: boolean }) {
   const pos = Array.isArray(position) ? position : [position.x, position.y, position.z];
   return (
     <Html position={pos as [number, number, number]} center>
       <div className="flex flex-col items-center">
-        <div className={`text-white px-2 py-1 rounded-full text-[10px] font-bold shadow-lg mb-1 whitespace-nowrap animate-bounce ${label.includes('HERE') ? 'bg-blue-600' : 'bg-green-600'}`}>
+        <div className={`text-white px-2 py-1 rounded-full text-[10px] font-bold shadow-lg mb-1 whitespace-nowrap animate-bounce ${isStairs ? 'bg-green-600' : 'bg-blue-600'}`}>
           {label}
         </div>
         <div className="relative">
-          <MapPin className={`w-8 h-8 filter drop-shadow-md ${label.includes('HERE') ? 'text-blue-600' : 'text-green-600'}`} />
+          <MapPin className={`w-8 h-8 filter drop-shadow-md ${isStairs ? 'text-green-600' : 'text-blue-600'}`} />
           <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-4 h-1 bg-black/20 rounded-full blur-[2px]"></div>
         </div>
       </div>
@@ -296,21 +296,34 @@ const firstFloorPathsKiosk2: Record<string, THREE.Vector3[]> = {
   ],
   stairs_basement: [
     new THREE.Vector3(-7.8, 0.01, 1.55), 
-    new THREE.Vector3(-7.8, 0.01, 2.50),
+    new THREE.Vector3(-7.8, 0.01, 0.96),
+    new THREE.Vector3(2.93, 0.01, 0.96),
+    new THREE.Vector3(2.93, 0.01, 2.98), // Basement stairwell entrance
   ],
   stairs_basement_left: [
     new THREE.Vector3(-7.8, 0.01, 1.55), 
-    new THREE.Vector3(-7.8, 0.01, 2.50),
+    new THREE.Vector3(-7.8, 0.01, 0.96),
+    new THREE.Vector3(2.93, 0.01, 0.96),
+    new THREE.Vector3(2.93, 0.01, 2.98), // Basement stairwell entrance
   ],
   entrance: [
     new THREE.Vector3(-7.8, 0.01, 1.55), 
-    new THREE.Vector3(-7.8, 0.01, 2.50),
+    new THREE.Vector3(-7.8, 0.01, 0.96),
+    new THREE.Vector3(2.93, 0.01, 0.96),
+    new THREE.Vector3(2.93, 0.01, 2.98), // Basement stairwell entrance
   ],
 };
 
-export default function FirstFloor(
-  props: Omit<FloorBaseProps, 'floorId' | 'url' | 'labels' | 'offset'>
-) {
+interface FirstFloorProps extends Omit<FloorBaseProps, 'floorId' | 'url' | 'labels' | 'offset'> {
+  onOfficeClick?: (officeId: string, floorId: string, displayName?: string) => void;
+  selectedOffice?: string | null;
+}
+
+export default function FirstFloor({
+  onOfficeClick,
+  selectedOffice,
+  ...props
+}: FirstFloorProps) {
   const { kioskId, labels, navigation } = useKiosk();
   const settings = getKioskSettings(kioskId);
 
@@ -323,14 +336,31 @@ export default function FirstFloor(
       offset={[0, 0, 0]}
       labels={labels.first}
       predefinedPaths={settings.showPaths ? paths : {}}
+      onOfficeClick={onOfficeClick}
+      selectedOffice={selectedOffice}
       {...props}
     >
       <YouAreHere position={settings.firstFloorPosition} />
       
-      {/* Show Stairs Marker when going to another floor */}
-      {navigation?.isActive && navigation.floorId !== 'first' && (
-        <YouAreHere label="TO NEXT FLOOR" position={[2.96, 0.5, 0.5]} />
-      )}
+      {/* Show Stairs Marker when navigation requires taking stairs from this floor */}
+      {(() => {
+        if (!navigation?.isActive) return null;
+        const stairsStep = navigation.steps.find(step => step.type === 'stairs' && step.floorId === 'first' && !step.completed);
+        if (!stairsStep) return null;
+        
+        // Determine position and label based on direction
+        const isGoingUp = ['second', 'third'].includes(navigation.floorId);
+        const label = isGoingUp ? 'TO NEXT FLOOR' : 'TO BASEMENT';
+        
+        // Different stairs locations:
+        // - UP to 2nd/3rd floor: main center stairs
+        // - DOWN to basement: basement stairwell entrance (black area on right side)
+        const stairsPosition: [number, number, number] = isGoingUp 
+          ? [2.96, 0.5, 0.5]      // Main stairs UP
+          : [2.93, 0.5, 2.98];     // Exact position at basement stairwell entrance
+        
+        return <YouAreHere label={label} position={stairsPosition} isStairs />;
+      })()}
     </FirstFloorBase>
   );
 }

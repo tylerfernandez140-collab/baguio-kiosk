@@ -5,25 +5,22 @@ import SecondFloorBase, { FloorBaseProps } from './components/SecondFloorBase';
 import { useKiosk } from '../../context/KioskContext';
 import { getKioskSettings } from '../../config/kioskConfig';
 
-function YouAreHere({ position }: { position: [number, number, number] | THREE.Vector3 }) {
+function YouAreHere({ position, label = 'TO NEXT FLOOR' }: { position: [number, number, number] | THREE.Vector3, label?: string }) {
   const pos = Array.isArray(position) ? position : [position.x, position.y, position.z];
   return (
     <Html position={pos as [number, number, number]} center>
       <div className="flex flex-col items-center">
-        <div className="bg-blue-600 text-white px-2 py-1 rounded-full text-[10px] font-bold shadow-lg mb-1 whitespace-nowrap animate-bounce">
-          STAIRS LANDING
+        <div className={`text-white px-2 py-1 rounded-full text-[10px] font-bold shadow-lg mb-1 whitespace-nowrap animate-bounce ${label.includes('LANDING') ? 'bg-blue-600' : 'bg-green-600'}`}>
+          {label}
         </div>
         <div className="relative">
-          <MapPin className="w-8 h-8 text-blue-600 filter drop-shadow-md" />
+          <MapPin className={`w-8 h-8 filter drop-shadow-md ${label.includes('LANDING') ? 'text-blue-600' : 'text-green-600'}`} />
           <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-4 h-1 bg-black/20 rounded-full blur-[2px]"></div>
         </div>
       </div>
     </Html>
   );
 }
-
-// Landing point from first floor stairs
-const STAIRS_LANDING = new THREE.Vector3(2.14, 0.01, -0.14);
 
 // Comprehensive labels for all detected second floor office meshes
 
@@ -322,9 +319,16 @@ const secondFloorPathsKiosk2: Record<string, THREE.Vector3[]> = {
   ...secondFloorPaths
 };
 
-export default function SecondFloor(
-  props: Omit<FloorBaseProps, 'floorId' | 'url' | 'labels' | 'offset'>
-) {
+interface SecondFloorProps extends Omit<FloorBaseProps, 'floorId' | 'url' | 'labels' | 'offset'> {
+  onOfficeClick?: (officeId: string, floorId: string, displayName?: string) => void;
+  selectedOffice?: string | null;
+}
+
+export default function SecondFloor({
+  onOfficeClick,
+  selectedOffice,
+  ...props
+}: SecondFloorProps) {
   const { kioskId, labels, navigation } = useKiosk();
   const settings = getKioskSettings(kioskId);
 
@@ -338,15 +342,29 @@ export default function SecondFloor(
       labels={labels.second}
       labelSize={6}
       predefinedPaths={settings.showPaths ? paths : {}}
-      customLabelPositions={{
-        CANTEEN: [-8.56, 0.03, -1.56]
-      }}
+      onOfficeClick={onOfficeClick}
+      selectedOffice={selectedOffice}
       {...props}
     >
-      {/* Show landing marker only during navigation when on this floor */}
-      {navigation?.isActive && navigation.floorId === 'second' && (
-        <YouAreHere position={STAIRS_LANDING} />
-      )}
+      {/* Show Stairs Marker when navigation requires taking stairs from this floor */}
+      {(() => {
+        if (!navigation?.isActive) return null;
+        const hasStairsStep = navigation.steps.some(step => step.type === 'stairs' && step.floorId === 'second' && !step.completed);
+        if (!hasStairsStep) return null;
+        
+        // Determine which stairs to use based on target office
+        let stairsPosition: [number, number, number];
+        const targetOffice = navigation.officeId.toLowerCase();
+        
+        // HR office uses HR stairs, others use back stairs
+        if (targetOffice.includes('human_resource') || targetOffice.includes('hr')) {
+          stairsPosition = [-1.65, 0.5, 1.96]; // HR stairs
+        } else {
+          stairsPosition = [-6.9, 0.5, -1.09]; // Back stairs to 3rd floor
+        }
+        
+        return <YouAreHere label="TO NEXT FLOOR" position={stairsPosition} />;
+      })()}
     </SecondFloorBase>
   );
 }

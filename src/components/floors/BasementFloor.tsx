@@ -1,8 +1,25 @@
 import * as THREE from 'three';
+import { Html } from '@react-three/drei';
+import { MapPin } from 'lucide-react';
 import BasementFloorBase, { FloorBaseProps } from './components/BasementFloorBase';
 import { useKiosk } from '../../context/KioskContext';
 
-
+function YouAreHere({ position, label = 'TO NEXT FLOOR' }: { position: [number, number, number] | THREE.Vector3, label?: string }) {
+  const pos = Array.isArray(position) ? position : [position.x, position.y, position.z];
+  return (
+    <Html position={pos as [number, number, number]} center>
+      <div className="flex flex-col items-center">
+        <div className={`text-white px-2 py-1 rounded-full text-[10px] font-bold shadow-lg mb-1 whitespace-nowrap animate-bounce ${label.includes('LANDING') ? 'bg-blue-600' : 'bg-green-600'}`}>
+          {label}
+        </div>
+        <div className="relative">
+          <MapPin className={`w-8 h-8 filter drop-shadow-md ${label.includes('LANDING') ? 'text-blue-600' : 'text-green-600'}`} />
+          <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-4 h-1 bg-black/20 rounded-full blur-[2px]"></div>
+        </div>
+      </div>
+    </Html>
+  );
+}
 
 const basementPaths: Record<string, THREE.Vector3[]> = {
 gso: [
@@ -94,10 +111,17 @@ gso: [
   ],
 };
 
-export default function BasementFloor(
-  props: Omit<FloorBaseProps, 'floorId' | 'url' | 'labels' | 'offset' | 'predefinedPaths'>
-) {
-  const { labels } = useKiosk();
+interface BasementFloorProps extends Omit<FloorBaseProps, 'floorId' | 'url' | 'labels' | 'offset'> {
+  onOfficeClick?: (officeId: string, floorId: string, displayName?: string) => void;
+  selectedOffice?: string | null;
+}
+
+export default function BasementFloor({
+  onOfficeClick,
+  selectedOffice,
+  ...props
+}: BasementFloorProps) {
+  const { labels, navigation } = useKiosk();
 
   return (
     <BasementFloorBase
@@ -106,7 +130,14 @@ export default function BasementFloor(
       offset={[0, 0, 0]}
       labels={labels.basement}
       predefinedPaths={basementPaths}
+      onOfficeClick={onOfficeClick}
+      selectedOffice={selectedOffice}
       {...props}
-    />
+    >
+      {/* Show Stairs Marker when navigation requires taking stairs from this floor */}
+      {navigation?.isActive && navigation.steps.some(step => step.type === 'stairs' && step.floorId === 'basement' && !step.completed) && (
+        <YouAreHere label="TO NEXT FLOOR" position={[2.6, 1.4, 4.9]} />
+      )}
+    </BasementFloorBase>
   );
 }

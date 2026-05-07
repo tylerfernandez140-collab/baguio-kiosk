@@ -165,39 +165,10 @@ export function FloorTransitionOverlay({
   );
 }
 
-// Simpler inline floor transition indicator (for corner display)
+// Simpler inline floor transition indicator (for corner display) - REMOVED
 export function FloorTransitionIndicator() {
-  const { navigation, selectedFloor, language } = useKiosk();
-  const [showIndicator, setShowIndicator] = useState(false);
-  const [targetFloor, setTargetFloor] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (navigation?.isActive && navigation.floorId !== selectedFloor) {
-      setTargetFloor(navigation.floorId);
-      setShowIndicator(true);
-    } else {
-      setShowIndicator(false);
-    }
-  }, [navigation, selectedFloor]);
-
-  if (!showIndicator || !targetFloor) return null;
-
-  return (
-    <div className="fixed top-4 right-4 z-50 animate-fade-in-down">
-      <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3">
-        <MoveVertical className="w-6 h-6 animate-bounce" />
-        <div>
-          <p className="text-xs font-medium text-white/80">
-            {language === 'en' ? 'Go to' : 'Pumunta sa'}
-          </p>
-          <p className="font-bold text-sm">
-            {language === 'en' ? floorNames[targetFloor].en : floorNames[targetFloor].fil}
-          </p>
-        </div>
-        <ArrowUp className="w-5 h-5 animate-pulse" />
-      </div>
-    </div>
-  );
+  // Orange "Go to Basement" button removed as requested
+  return null;
 }
 
 export default FloorTransitionOverlay;

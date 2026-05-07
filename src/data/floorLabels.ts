@@ -1,3 +1,61 @@
+// Mapping from 3D object names to image filenames
+export const officeImageMap: Record<string, string> = {
+  // First floor
+  city_treasurers: 'treasury_office',
+  city_accountant: 'accountant_office',
+  city_accountants: 'accountant_office',
+  session_hall: 'session_hall',
+  city_budget_office: 'budget_office',
+  licensing: 'permits_&_licensing_division',
+  one_stop_shop: 'one_stop_shop',
+  city_planning_office: 'office_of_the_city_planning_and_development',
+  city_auditors: 'office_of_the_city_auditor',
+  city_auditors_2: 'office_of_the_city_auditor',
+  
+  // Second floor
+  CMO: 'city_mayor\'s_office',
+  OOTVM: 'city_administrator\'s_office',
+  CAO: 'assessor\'s_offce',
+  PIO: 'public_information_office',
+  PESO: 'public_employment_service_office_PESO',
+  CADO: 'city_administrator\'s_office',
+  CLO: 'city_legal_office',
+  CSO: 'sp_research_division',
+  MITD: 'managemen_information_and_technology_division',
+  MITD001: 'managemen_information_and_technology_division',
+  OFTC: 'congressman',
+  POSD: 'president_lnb_baguio_chapter',
+  COUN1: 'committee_on_public_protection_and_safety_peace_and_order_and_human_rights_and_justice',
+  COUN2: 'committee_on_public_utilities_transportation_and_traffic_legislation',
+  COUN3: 'committee_on_tourism_special_events_and_playgrounds',
+  COUN4: 'committee_on_urban_planning_lands_and_housing',
+  COUN5: 'committee_on_social_services_women_and_urban_poor',
+  COUN6: 'committee_on_ethics_government_affairs_and_personnel',
+  COUN7: 'committee_on_laws_and_governance',
+  COUN8: 'committee_on_health_and_sanitation_ecology_and_environmental_protection',
+  COUN9: 'committee_on_public_works',
+  COUN10: 'committee_on_market_trade_and_commerce_and_agriculture',
+  COUN11: 'committee_on_employment',
+  COUN12: 'receiving_/_releasing',
+  COUN13: 'committee_on_social_services_women_and_urban_poor',
+  STENO: 'steno_clerical_services_division',
+  
+  // Third floor
+  city_mayor_office: 'city_mayor\'s_office',
+  city_assessors_office: 'assessor\'s_offce',
+  city__human_resource__management: 'human_resource_management_office',
+  
+  // Basement
+  gso: 'persons_with_disabilities_affairs_offce_PDAO',
+  ofortod: 'registry_of_deeds',
+  ceapmo: 'city_environment_and_parks_management_office',
+  c_auditors_o: 'office_of_the_city_auditor',
+};
+
+export function getOfficeImageFilename(officeId: string): string {
+  return officeImageMap[officeId] || officeId;
+}
+
 export const initialFloorLabels: Record<string, Record<string, string>> = {
   basement: {
     gso: 'Persons with\nDisabilities Affairs Office',
