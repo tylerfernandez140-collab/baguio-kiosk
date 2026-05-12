@@ -154,8 +154,9 @@ const firstFloorPaths: Record<string, THREE.Vector3[]> = {
     new THREE.Vector3(-9.65, 0.01, -0.70),
       ],
   stairs: [
-    new THREE.Vector3(3.20, 0.001, 2.5), 
-    new THREE.Vector3(2.96, 0.01, 0.5),
+    new THREE.Vector3(3.20, 0.01, 2.5), 
+    new THREE.Vector3(3.8, 0.01, 2.5),
+    new THREE.Vector3(3.8, 0.01, -0.1),
   ],
   stairs_basement_left: [
     new THREE.Vector3(3.20, 0.001, 2.5), 
@@ -353,7 +354,7 @@ export default function FirstFloor({
         // - UP to 2nd/3rd floor: main center stairs
         // - DOWN to basement: basement stairwell entrance (black area on right side)
         const stairsPosition: [number, number, number] = isGoingUp 
-          ? [2.96, 0.5, 0.5]      // Main stairs UP
+          ? [3.8, 0.01, -0.1]      // Main stairs UP
           : [2.93, 0.5, 2.98];     // Exact position at basement stairwell entrance
         
         return <YouAreHere label={label} position={stairsPosition} isStairs />;
