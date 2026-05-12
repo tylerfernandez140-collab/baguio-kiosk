@@ -221,9 +221,9 @@ const CityHallDirectoryInternal = ({ onNavigate, selectedOffice: propSelectedOff
   };
 
   const handleCanvasClick = () => {
-    if (navigation?.isActive) {
-      clearNavigation();
-    }
+    // We intentionally do not clear navigation here so users can click/drag
+    // the 3D model to look around without accidentally dismissing their directions.
+    // They must explicitly click "Done" on the NavigationCompletePopup.
     setShowGetDirection(false);
     currentSetSelectedOffice(null);
   };
@@ -631,7 +631,6 @@ function NavigationCompletePopup({ navigation, onRepeat, onDone }: NavigationCom
   const currentStep = navigation.steps[navigation.currentStepIndex];
   const { selectedFloor } = useKiosk();
   const hasArrived = currentStep?.type === 'arrived' && 
-                    currentStep.completed && 
                     currentStep.floorId === selectedFloor && 
                     !navigation.isTransitioning;
   

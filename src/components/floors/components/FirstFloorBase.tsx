@@ -630,7 +630,7 @@ export default function FloorBase({
           // If navigation is active, only allow clearing by clicking empty space
           if (!name) {
             setSelectedOffice(null);
-            clearNavigation();
+            // Intentionally not clearing navigation so user can look around
           }
         } else {
           // If navigation is not active, allow selecting any office
