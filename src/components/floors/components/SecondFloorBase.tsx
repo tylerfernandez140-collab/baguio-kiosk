@@ -652,11 +652,14 @@ export default function FloorBase({
           // If navigation is active, only allow clearing by clicking empty space
           if (!name) {
             setSelectedOffice(null);
-            // Intentionally not clearing navigation so user can look around
           }
         } else {
-          // If navigation is not active, allow selecting any office
-          if (name) {
+          // If navigation is not active, allow selecting any office that has a label
+          const blocked = ['HE', 'SHE', 'KITCHEN', 'STO'];
+          const isBlocked = name && blocked.includes(name.toUpperCase());
+          const hasLabel = name && (labels[name] || labels[name.toLowerCase()]);
+
+          if (name && !isBlocked && hasLabel) {
             setSelectedOffice({ name, position });
             // Call the onOfficeClick prop with raw object name and display label
             onOfficeClick?.(name, floorId, getOfficeLabel(name));
@@ -668,7 +671,9 @@ export default function FloorBase({
         onLoadMarkers={setOfficeMarkers}
       />
       
-      {!hideLabels && officeMarkers.map((office, index) => (
+      {!hideLabels && officeMarkers
+        .filter(office => labels[office.name] || labels[office.name.toLowerCase()])
+        .map((office, index) => (
         <Html
           key={`${url}-label-${index}`}
           position={
