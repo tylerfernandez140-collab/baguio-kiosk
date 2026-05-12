@@ -11,7 +11,7 @@ export const KIOSK_SETTINGS: Record<string, KioskSettings> = {
     showPaths: true,
   },
   kiosk_2: {
-    firstFloorPosition: [-7.8, 0.1, 1.55],
+    firstFloorPosition: [-5.98, 0.1, 0.78],
     showPaths: true,
   },
 };

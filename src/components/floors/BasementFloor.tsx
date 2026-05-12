@@ -7,7 +7,7 @@ import { useKiosk } from '../../context/KioskContext';
 function YouAreHere({ position, label = 'TO NEXT FLOOR' }: { position: [number, number, number] | THREE.Vector3, label?: string }) {
   const pos = Array.isArray(position) ? position : [position.x, position.y, position.z];
   return (
-    <Html position={pos as [number, number, number]} center>
+    <Html position={pos as [number, number, number]} center transform sprite distanceFactor={8}>
       <div className="flex flex-col items-center">
         <div className={`text-white px-2 py-1 rounded-full text-[10px] font-bold shadow-lg mb-1 whitespace-nowrap animate-bounce ${label.includes('LANDING') ? 'bg-blue-600' : 'bg-green-600'}`}>
           {label}
