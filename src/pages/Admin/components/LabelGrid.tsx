@@ -41,7 +41,7 @@ export const LabelGrid = ({
                 <textarea 
                   value={editValue}
                   onChange={(e) => setEditValue(e.target.value)}
-                  className="bg-neutral-800 border-blue-500 rounded p-2 text-sm text-white resize-none h-16 outline-none"
+                  className="bg-neutral-800 border-pine rounded p-2 text-sm text-white resize-none h-16 outline-none"
                   autoFocus
                 />
                 <div className="flex justify-end gap-2">

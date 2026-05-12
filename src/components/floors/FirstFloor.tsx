@@ -5,8 +5,6 @@ import { useKiosk } from '../../context/KioskContext';
 import { getKioskSettings } from '../../config/kioskConfig';
 import FirstFloorBase, { FloorBaseProps } from './components/FirstFloorBase';
 
-
-
 function YouAreHere({ position, label = 'YOU ARE HERE', isStairs = false }: { position: [number, number, number] | THREE.Vector3, label?: string, isStairs?: boolean }) {
   const pos = Array.isArray(position) ? position : [position.x, position.y, position.z];
   return (
@@ -31,6 +29,20 @@ const HALLWAY_Z = 0.96; // Main hallway Z coordinate
 
 const firstFloorPaths: Record<string, THREE.Vector3[]> = {
  session_hall: [
+    new THREE.Vector3(2.40, 0.01, 1.74), 
+    new THREE.Vector3(2.90, 0.01, 1.74),
+    new THREE.Vector3(2.90, 0.01, 0.96),
+    new THREE.Vector3(5.72, 0.01, 0.96),
+    new THREE.Vector3(5.72, 0.01, 1.15), 
+  ],
+  sh: [
+    new THREE.Vector3(2.40, 0.01, 1.74), 
+    new THREE.Vector3(2.90, 0.01, 1.74),
+    new THREE.Vector3(2.90, 0.01, 0.96),
+    new THREE.Vector3(5.72, 0.01, 0.96),
+    new THREE.Vector3(5.72, 0.01, 1.15), 
+  ],
+  aimd: [
     new THREE.Vector3(2.40, 0.01, 1.74), 
     new THREE.Vector3(2.90, 0.01, 1.74),
     new THREE.Vector3(2.90, 0.01, 0.96),
@@ -335,6 +347,9 @@ export default function FirstFloor({
       url="/models/first_floor.glb"
       offset={[0, 0, 0]}
       labels={labels.first}
+      customLabelPositions={{
+        clinic: [3.15, 0.35, -1.65]
+      }}
       predefinedPaths={settings.showPaths ? paths : {}}
       onOfficeClick={onOfficeClick}
       selectedOffice={selectedOffice}

@@ -14,7 +14,7 @@ export const StatCard = ({ title, value, change }: StatCardProps) => (
       <CardTitle className="text-3xl font-bold">{value}</CardTitle>
     </CardHeader>
     <CardContent>
-      <p className="text-sm text-blue-400 font-medium">{change}</p>
+      <p className="text-sm text-gold font-medium">{change}</p>
     </CardContent>
   </Card>
 );

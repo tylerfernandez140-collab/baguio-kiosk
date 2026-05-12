@@ -5,6 +5,8 @@ export const officeImageMap: Record<string, string> = {
   city_accountant: 'accountant_office',
   city_accountants: 'accountant_office',
   session_hall: 'session_hall',
+  sh: 'session_hall',
+  aimd: 'session_hall',
   city_budget_office: 'budget_office',
   licensing: 'permits_&_licensing_division',
   one_stop_shop: 'one_stop_shop',
@@ -75,7 +77,8 @@ export const initialFloorLabels: Record<string, Record<string, string>> = {
   first: {
     city_treasurers: 'City Treasurer',
     city_planning_office: 'Planning and\nDevelopment Office ',
-    session_hall: 'Session Hall',
+    sh: 'Session Hall',
+    aimd: 'AIMD',
     clinic: 'Clinic',
     mitd: 'MITD',
     coop: 'Coop',

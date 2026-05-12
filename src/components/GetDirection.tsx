@@ -5,7 +5,7 @@ interface GetDirectionProps {
 
 export default function GetDirection({ onGetDirection, onClose }: GetDirectionProps) {
   return (
-    <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 pointer-events-auto">
+    <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-[9999] pointer-events-auto">
       <div className="bg-white rounded-lg shadow-xl border-2 border-red-500 px-6 py-4 flex items-center gap-4">
         <div className="flex gap-2">
           <button

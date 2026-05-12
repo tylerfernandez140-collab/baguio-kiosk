@@ -45,6 +45,7 @@ function Model({
   offset = [0, 0, 0],
   onSelectOffice,
   onLoadMarkers,
+  selectedOfficeName,
 }: {
   url: string;
   offset?: [number, number, number];
@@ -57,6 +58,7 @@ function Model({
       center: THREE.Vector3;
     }[]
   ) => void;
+  selectedOfficeName?: string | null;
 }) {
   const { scene } = useGLTF(url);
   const isLoadedRef = useRef(false);
@@ -70,11 +72,12 @@ function Model({
     for (const intersection of intersections) {
       const clickedObject = intersection.object;
       const name = (clickedObject.name || '').toLowerCase();
-      const isBase = ['ground', 'plane', 'stairs', 'cube', 'base', 'floor', 'cto'].some(
+      const isBase = ['ground', 'plane', 'stairs', 'cube', 'base', 'floor', 'cto', 'disc', 'disk'].some(
         ignored => name.includes(ignored)
       );
+      const isPath = name.includes('path');
 
-      if (isBase) {
+      if (isBase || isPath) {
         onSelectOffice?.(null, new THREE.Vector3());
         return;
       }
@@ -104,13 +107,15 @@ function Model({
         const name = child.name.toLowerCase();
         const isCube = name.includes('cube');
         const isStairs = name.includes('stairs');
+        const isDisc = name.includes('disc') || name.includes('disk');
         const isExactPlane = name === 'plane';
         const isFloorBase = ['ground', 'base', 'floor', 'cto'].some(ignored => name.includes(ignored)) || (name.includes('plane') && !isExactPlane);
-        const isBase = isFloorBase || isStairs || isCube || isExactPlane;
+        const isPath = name.includes('path');
+        const isBase = isFloorBase || isStairs || isCube || isExactPlane || isDisc;
         
         child.castShadow = true;
         child.receiveShadow = true;
-        child.userData.clickable = !isBase;
+        child.userData.clickable = !isBase && !isPath;
 
         // Clone materials to prevent shared material color bleed between meshes
         if (Array.isArray(child.material)) {
@@ -141,6 +146,11 @@ function Model({
             mat.polygonOffset = true;
             mat.polygonOffsetFactor = -1;
             mat.polygonOffsetUnits = -2;
+          } else if (isDisc) {
+            mat.color?.setHex(0x004700); // Disc = Green
+            mat.polygonOffset = true;
+            mat.polygonOffsetFactor = -1;
+            mat.polygonOffsetUnits = -4;
           } else if (isFloorBase) {
             mat.color?.setHex(0x004700); // Base = Green
           } else {
@@ -180,9 +190,10 @@ function Model({
       wrapper.traverse((child: THREE.Object3D) => {
         if (child instanceof THREE.Mesh) {
           const name = child.name.toLowerCase();
-          const isIgnored = ['ground', 'plane', 'stairs', 'cube', 'base', 'floor', 'cto'].some(ignored => name.includes(ignored));
+          const isBase = ['ground', 'plane', 'stairs', 'cube', 'base', 'floor', 'cto', 'disc', 'disk'].some(ignored => name.includes(ignored));
+          const isPath = name.includes('path');
 
-          if (!isIgnored) {
+          if (!isBase && !isPath) {
             const childBox = new THREE.Box3().setFromObject(child);
             const localCenter = new THREE.Vector3();
             childBox.getCenter(localCenter);
@@ -191,7 +202,7 @@ function Model({
             
             const markerPos = new THREE.Vector3(
               localCenter.x,
-              childBox.max.y + 0.3,
+              childBox.max.y + 0.01,
               localCenter.z
             );
             
@@ -219,6 +230,43 @@ function Model({
     const timeout = setTimeout(scanMarkers, 100);
     return () => clearTimeout(timeout);
   }, [url, wrapper, onLoadMarkers]);
+
+  // Handle selected office highlighting
+  useEffect(() => {
+    wrapper.traverse((child) => {
+      if (child instanceof THREE.Mesh) {
+        const name = child.name.toLowerCase();
+        const isSelected = selectedOfficeName && name === selectedOfficeName.toLowerCase();
+        
+        const materials = Array.isArray(child.material) ? child.material : [child.material];
+        materials.forEach((mat: any) => {
+          if (!mat) return;
+          
+          if (isSelected) {
+            mat.color.setHex(0x38bdf8); // Highlight Light Blue
+          } else {
+            // Reset to original colors
+            const isCube = name.includes('cube');
+            const isStairs = name.includes('stairs');
+            const isDisc = name.includes('disc') || name.includes('disk');
+            const isExactPlane = name === 'plane';
+            const isFloorBase = ['ground', 'base', 'floor', 'cto'].some(ignored => name.includes(ignored)) || (name.includes('plane') && !isExactPlane);
+            
+            if (isCube) {
+              mat.color.setHex(0x8B4513);
+            } else if (isStairs || isExactPlane) {
+              mat.color.setHex(0x90EE90);
+            } else if (isDisc || isFloorBase) {
+              mat.color.setHex(0x004700);
+            } else {
+              mat.color.setHex(0xffffff); // Default office color
+            }
+          }
+          mat.needsUpdate = true;
+        });
+      }
+    });
+  }, [selectedOfficeName, wrapper]);
 
   return (
     <primitive
@@ -529,23 +577,38 @@ export default function FloorBase({
 
   const getOfficeLabel = (name: string) => {
     const normalizedName = name.toLowerCase().replace(/[^a-z0-9]/g, '');
-    const exactMatch = labels[name.toLowerCase().replace(/[._]\d+$/, "")] || labels[name.toLowerCase()];
     
-    if (exactMatch) return String(exactMatch).replace(/\\n/g, '\n');
+    // 1. Try case-insensitive exact match first
+    const exactKey = Object.keys(labels).find(key => key.toLowerCase() === name.toLowerCase());
+    if (exactKey) return String(labels[exactKey]).replace(/\\n/g, '\n');
 
+    // 2. Try removing numeric suffix (.001 or _001) only if no exact match found
+    const baseName = name.toLowerCase().replace(/[._]\d+$/, "");
+    const baseKey = Object.keys(labels).find(key => key.toLowerCase() === baseName);
+    if (baseKey) return String(labels[baseKey]).replace(/\\n/g, '\n');
+
+    // 3. Try normalized match (remove all special chars)
     const matchingKey = Object.keys(labels).find(key => 
       key.toLowerCase().replace(/[^a-z0-9]/g, '') === normalizedName
     );
     
     if (matchingKey) return String(labels[matchingKey]).replace(/\\n/g, '\n');
+    
+    // 4. Fallback to raw name
     return name.replace(/[_+]/g, '\n');
   };
+
+  const effectiveSelectedOfficeName = useMemo(() => {
+    if (navigation?.isActive) return navigation.officeId;
+    return selectedOffice?.name || selectedOfficeProp || null;
+  }, [navigation, selectedOffice, selectedOfficeProp]);
 
   return (
     <>
       <Model
         url={url}
         offset={offset}
+        selectedOfficeName={effectiveSelectedOfficeName}
         onSelectOffice={(name: string | null, position: THREE.Vector3) => {
         if (navigation?.isActive) {
           // If navigation is active, only allow clearing by clicking empty space
@@ -575,21 +638,38 @@ export default function FloorBase({
               ? customLabelPositions[office.name] 
               : [
                   office.position.x,
-                  office.position.y + 0.15,
+                  office.position.y + 0.01,
                   office.position.z,
                 ]
           }
           transform
           rotation={[-Math.PI / 2, 0, 0]}
           distanceFactor={8}
+          zIndexRange={[0, 10]}
           style={{
-            pointerEvents: 'none',
+            pointerEvents: 'auto',
             userSelect: 'none',
           }}
         >
           <div 
-            className="text-black font-semibold tracking-tight whitespace-pre-line text-center leading-tight"
+            className="text-black font-semibold tracking-tight whitespace-pre-line text-center leading-tight cursor-pointer"
             style={{ fontSize: `${labelSize}px` }}
+            onClick={(e) => {
+              e.stopPropagation();
+              const name = office.name;
+              const popupPosition = new THREE.Vector3(
+                office.position.x,
+                office.position.y + 0.8,
+                office.position.z
+              );
+              
+              if (navigation?.isActive) {
+                // If navigation is active, clicking label doesn't do much or clears if empty
+              } else {
+                setSelectedOffice({ name, position: popupPosition });
+                onOfficeClick?.(name, floorId, getOfficeLabel(name));
+              }
+            }}
           >
             {getOfficeLabel(office.name).toUpperCase()}
           </div>
@@ -599,6 +679,8 @@ export default function FloorBase({
       {activePath && (
         <AnimatedPath points={activePath} />
       )}
+      
+      <CoordinateDetector />
       
       {/* Camera Animation - follows the active path during navigation */}
       <CameraAnimation 

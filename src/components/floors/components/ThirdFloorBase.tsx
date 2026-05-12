@@ -45,6 +45,7 @@ function Model({
   offset = [0, 0, 0],
   onSelectOffice,
   onLoadMarkers,
+  selectedOfficeName,
 }: {
   url: string;
   offset?: [number, number, number];
@@ -57,6 +58,7 @@ function Model({
       center: THREE.Vector3;
     }[]
   ) => void;
+  selectedOfficeName?: string | null;
 }) {
   const { scene } = useGLTF(url);
   const isLoadedRef = useRef(false);
@@ -217,6 +219,47 @@ function Model({
     const timeout = setTimeout(scanMarkers, 100);
     return () => clearTimeout(timeout);
   }, [url, wrapper, onLoadMarkers]);
+
+  // Handle selected office highlighting
+  useEffect(() => {
+    wrapper.traverse((child) => {
+      if (child instanceof THREE.Mesh) {
+        const name = child.name.toLowerCase();
+        const isSelected = selectedOfficeName && name === selectedOfficeName.toLowerCase();
+        
+        const materials = Array.isArray(child.material) ? child.material : [child.material];
+        materials.forEach((mat: any) => {
+          if (!mat) return;
+          
+          if (isSelected) {
+            mat.color.setHex(0x38bdf8); // Highlight Light Blue
+          } else {
+            // Reset to original colors
+            const isOutline = name.includes('outline');
+            const isCenter = name.includes('center');
+            const isCube = name.includes('cube');
+            const isStairs = name.includes('stairs');
+            const isFloorBase = ['ground', 'base', 'floor'].some(ignored => name.includes(ignored)) || name === 'plane001' || name === 'plane.001';
+            
+            if (isOutline) {
+              mat.color.setHex(0x000000);
+            } else if (isCube) {
+              mat.color.setHex(0x8B4513);
+            } else if (isStairs) {
+              mat.color.setHex(0x90EE90);
+            } else if (isFloorBase) {
+              mat.color.setHex(0x004700);
+            } else if (isCenter) {
+              mat.color.setHex(0xFFFF00);
+            } else {
+              mat.color.setHex(0xffffff);
+            }
+          }
+          mat.needsUpdate = true;
+        });
+      }
+    });
+  }, [selectedOfficeName, wrapper]);
 
   return (
     <primitive
@@ -498,23 +541,38 @@ export default function FloorBase({
 
   const getOfficeLabel = (name: string) => {
     const normalizedName = name.toLowerCase().replace(/[^a-z0-9]/g, '');
-    const exactMatch = labels[name.toLowerCase().replace(/[._]\d+$/, "")] || labels[name.toLowerCase()];
     
-    if (exactMatch) return String(exactMatch).replace(/\\n/g, '\n');
+    // 1. Try case-insensitive exact match first
+    const exactKey = Object.keys(labels).find(key => key.toLowerCase() === name.toLowerCase());
+    if (exactKey) return String(labels[exactKey]).replace(/\\n/g, '\n');
 
+    // 2. Try removing numeric suffix (.001 or _001) only if no exact match found
+    const baseName = name.toLowerCase().replace(/[._]\d+$/, "");
+    const baseKey = Object.keys(labels).find(key => key.toLowerCase() === baseName);
+    if (baseKey) return String(labels[baseKey]).replace(/\\n/g, '\n');
+
+    // 3. Try normalized match (remove all special chars)
     const matchingKey = Object.keys(labels).find(key => 
       key.toLowerCase().replace(/[^a-z0-9]/g, '') === normalizedName
     );
     
     if (matchingKey) return String(labels[matchingKey]).replace(/\\n/g, '\n');
+    
+    // 4. Fallback to raw name
     return name.replace(/[_+]/g, '\n');
   };
+
+  const effectiveSelectedOfficeName = useMemo(() => {
+    if (navigation?.isActive) return navigation.officeId;
+    return selectedOffice?.name || selectedOfficeProp || null;
+  }, [navigation, selectedOffice, selectedOfficeProp]);
 
   return (
     <>
       <Model
         url={url}
         offset={offset}
+        selectedOfficeName={effectiveSelectedOfficeName}
         onSelectOffice={(name: string | null, position: THREE.Vector3) => {
         if (navigation?.isActive) {
           // If navigation is active, only allow clearing by clicking empty space

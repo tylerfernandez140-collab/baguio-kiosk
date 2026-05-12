@@ -31,7 +31,7 @@ export const OfficeList = ({
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" size={18} />
           <Input 
             placeholder="Search directory entries..." 
-            className="pl-10 bg-neutral-900 border-neutral-800 focus:ring-blue-500"
+            className="pl-10 bg-neutral-900 border-neutral-800 focus:ring-pine"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -42,9 +42,8 @@ export const OfficeList = ({
         <Table>
           <TableHeader className="bg-neutral-900">
             <TableRow className="border-neutral-800 hover:bg-transparent">
-              <TableHead className="w-[250px] text-neutral-400 font-semibold">Office Name (From Map)</TableHead>
-              <TableHead className="w-[200px] text-neutral-400 font-semibold">Officer In Charge</TableHead>
-              <TableHead className="text-neutral-400 font-semibold">Description</TableHead>
+              <TableHead className="w-[300px] text-neutral-400 font-semibold">Office Name (From Map)</TableHead>
+              <TableHead className="text-neutral-400 font-semibold">Directory Image</TableHead>
               <TableHead className="w-[120px] text-right text-neutral-400 font-semibold">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -64,60 +63,66 @@ export const OfficeList = ({
                 
                 <TableCell className="align-top py-4">
                   {editingId === office.id ? (
-                    <div className="flex flex-col gap-2">
-                      <Input 
-                        value={office.officer || ''}
-                        onChange={(e) => setOffices((prev: any[]) => prev.map(o => o.id === office.id ? { ...o, officer: e.target.value } : o))}
-                        className="bg-neutral-800 border-neutral-700 h-8 text-xs"
-                        placeholder="Officer name"
-                      />
-                      <div className="flex flex-col gap-2">
-                        <div className="relative group">
-                          {uploadingStatus[office.id] !== undefined ? (
-                            <div className="w-full h-12 border border-neutral-800 rounded flex flex-col items-center justify-center p-2 gap-2">
-                              <Progress value={uploadingStatus[office.id]} className="h-1 animate-pulse" />
-                              <span className="text-[10px] text-blue-400 font-medium">
-                                {uploadingStatus[office.id] === 100 ? 'Finalizing...' : 'Uploading...'}
-                              </span>
+                    <div className="flex flex-col gap-2 max-w-[200px]">
+                      <div className="relative group">
+                        {uploadingStatus[office.id] !== undefined ? (
+                          <div className="w-full h-24 border border-neutral-800 rounded flex flex-col items-center justify-center p-2 gap-2 bg-neutral-900/50">
+                            <Progress value={uploadingStatus[office.id]} className="h-1 w-full animate-pulse" />
+                            <span className="text-[10px] text-sky font-medium">
+                              {uploadingStatus[office.id] === 100 ? 'Finalizing...' : 'Uploading...'}
+                            </span>
+                          </div>
+                        ) : office.image_url ? (
+                          <div className="relative w-full h-24 rounded border border-neutral-700 overflow-hidden shadow-xl bg-neutral-950">
+                            <img src={office.image_url} alt="Office" className="w-full h-full object-cover" />
+                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                              <label className="cursor-pointer text-xs text-white flex items-center gap-2 font-medium">
+                                <Upload size={14} /> Change Image
+                                <input 
+                                  type="file" 
+                                  className="hidden" 
+                                  accept="image/*"
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) handleImageUpload(file, office.id);
+                                  }}
+                                />
+                              </label>
                             </div>
-                          ) : office.image_url ? (
-                            <div className="relative w-full h-12 rounded border border-neutral-700 overflow-hidden">
-                              <img src={office.image_url} alt="Office" className="w-full h-full object-cover" />
-                              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                                <label className="cursor-pointer text-[10px] text-white flex items-center gap-1">
-                                  <Upload size={10} /> Change
-                                  <input type="file" className="hidden" accept="image/*" onChange={(e) => { const file = e.target.files?.[0]; if (file) handleImageUpload(file, office.id); }} />
-                                </label>
-                              </div>
-                              <div className="absolute top-1 right-1 bg-green-500 rounded-full p-0.5 shadow-lg">
-                                <Check size={8} className="text-white" />
-                              </div>
+                            <div className="absolute top-2 right-2 bg-green-500 rounded-full p-1 shadow-lg">
+                              <Check size={10} className="text-white" />
                             </div>
-                          ) : (
-                            <label className="w-full h-12 border-2 border-dashed border-neutral-800 rounded flex flex-col items-center justify-center gap-1 text-neutral-500 hover:border-neutral-700 hover:text-neutral-400 cursor-pointer transition-all">
-                              <ImageIcon size={14} />
-                              <span className="text-[10px]">Upload Photo</span>
-                              <input type="file" className="hidden" accept="image/*" onChange={(e) => { const file = e.target.files?.[0]; if (file) handleImageUpload(file, office.id); }} />
-                            </label>
-                          )}
-                        </div>
+                          </div>
+                        ) : (
+                          <label className="w-full h-24 border-2 border-dashed border-neutral-800 rounded flex flex-col items-center justify-center gap-2 text-neutral-500 hover:border-pine hover:text-pine hover:bg-pine/5 cursor-pointer transition-all">
+                            <ImageIcon size={20} />
+                            <span className="text-xs font-medium">Upload Photo</span>
+                            <input 
+                              type="file" 
+                              className="hidden" 
+                              accept="image/*"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) handleImageUpload(file, office.id);
+                              }}
+                            />
+                          </label>
+                        )}
                       </div>
                     </div>
                   ) : (
-                    <span className="text-neutral-300 text-sm">{office.officer || '—'}</span>
-                  )}
-                </TableCell>
-                
-                <TableCell className="align-top py-4">
-                  {editingId === office.id ? (
-                    <textarea 
-                      value={office.description || ''}
-                      onChange={(e) => setOffices((prev: any[]) => prev.map(o => o.id === office.id ? { ...o, description: e.target.value } : o))}
-                      className="w-full bg-neutral-800 border border-neutral-700 rounded p-2 text-xs text-white resize-none h-20 outline-none focus:border-blue-500"
-                      placeholder="Add description..."
-                    />
-                  ) : (
-                    <p className="text-neutral-500 text-sm line-clamp-2">{office.description || 'No description yet.'}</p>
+                    <div className="flex items-center gap-4">
+                      {office.image_url ? (
+                        <div className="w-16 h-16 rounded-lg border border-neutral-800 overflow-hidden bg-neutral-950">
+                          <img src={office.image_url} alt="" className="w-full h-full object-cover" />
+                        </div>
+                      ) : (
+                        <div className="w-16 h-16 rounded-lg border border-neutral-800 bg-neutral-900/50 flex items-center justify-center text-neutral-700">
+                          <ImageIcon size={20} />
+                        </div>
+                      )}
+                      <span className="text-neutral-500 text-xs italic">{office.image_url ? 'Image uploaded' : 'No image yet'}</span>
+                    </div>
                   )}
                 </TableCell>
                 
@@ -137,7 +142,7 @@ export const OfficeList = ({
             ))}
             {offices.length === 0 && (
               <TableRow>
-                <TableCell colSpan={4} className="h-24 text-center text-neutral-500 italic">No directory entries found for this floor.</TableCell>
+                <TableCell colSpan={3} className="h-24 text-center text-neutral-500 italic">No directory entries found for this floor.</TableCell>
               </TableRow>
             )}
           </TableBody>

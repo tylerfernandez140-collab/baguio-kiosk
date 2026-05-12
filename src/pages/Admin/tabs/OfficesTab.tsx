@@ -51,7 +51,7 @@ export const OfficesTab = ({ officesHook }: OfficesTabProps) => {
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-7 px-0">
         <div>
           <CardTitle className="text-2xl font-bold flex items-center gap-2">
-            <Building className="text-blue-500" />
+            <Building className="text-pine" />
             Office Directory Management
           </CardTitle>
           <CardDescription>
@@ -60,18 +60,13 @@ export const OfficesTab = ({ officesHook }: OfficesTabProps) => {
         </div>
       </CardHeader>
       
-      <header className="flex justify-between items-center mb-8">
-        <Button className="bg-blue-600 hover:bg-blue-500 flex gap-2">
-          <Building size={18} />
-          Add New Office
-        </Button>
-      </header>
+
 
       <Tabs defaultValue="offices" className="w-full">
         <div className="flex justify-between items-center mb-6">
           <TabsList className="bg-neutral-900 border border-neutral-800 p-1">
-            <TabsTrigger value="offices" className="data-[state=active]:bg-blue-600">Offices List</TabsTrigger>
-            <TabsTrigger value="labels" className="data-[state=active]:bg-blue-600">3D Map Labels</TabsTrigger>
+            <TabsTrigger value="offices" className="data-[state=active]:bg-pine text-white">Offices List</TabsTrigger>
+            <TabsTrigger value="labels" className="data-[state=active]:bg-pine text-white">3D Map Labels</TabsTrigger>
           </TabsList>
         </div>
 

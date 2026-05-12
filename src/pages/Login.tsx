@@ -19,7 +19,7 @@ const Login = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-neutral-950 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+        <Loader2 className="w-8 h-8 text-pine animate-spin" />
       </div>
     );
   }
@@ -56,18 +56,18 @@ const Login = () => {
   return (
     <div className="min-h-screen bg-neutral-950 flex items-center justify-center p-4 relative overflow-hidden">
       {/* Dynamic Background Elements */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/10 rounded-full blur-[120px] animate-pulse" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-600/10 rounded-full blur-[120px] animate-pulse delay-700" />
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-pine/10 rounded-full blur-[120px] animate-pulse" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-sky/10 rounded-full blur-[120px] animate-pulse delay-700" />
       
       {/* Decorative Grid */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
 
-      <Card className="w-full max-w-md bg-neutral-900/40 border-neutral-800/50 backdrop-blur-2xl shadow-2xl relative z-10 overflow-hidden transform transition-all duration-500 hover:shadow-blue-500/5">
-        <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-blue-500 to-transparent opacity-50" />
+      <Card className="w-full max-w-md bg-neutral-900/40 border-neutral-800/50 backdrop-blur-2xl shadow-2xl relative z-10 overflow-hidden transform transition-all duration-500 hover:shadow-pine/5">
+        <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-pine to-transparent opacity-50" />
         
         <CardHeader className="space-y-4 pt-8 text-center">
-          <div className="mx-auto w-16 h-16 bg-blue-600/10 rounded-2xl flex items-center justify-center border border-blue-500/20 group hover:scale-110 transition-transform duration-300">
-            <ShieldCheck className="w-8 h-8 text-blue-500 group-hover:rotate-12 transition-transform" />
+          <div className="mx-auto w-16 h-16 bg-pine/10 rounded-2xl flex items-center justify-center border border-pine/20 group hover:scale-110 transition-transform duration-300">
+            <ShieldCheck className="w-8 h-8 text-pine group-hover:rotate-12 transition-transform" />
           </div>
           <div className="space-y-2">
             <CardTitle className="text-3xl font-bold tracking-tight text-white">Baguio Kiosk</CardTitle>
@@ -82,14 +82,14 @@ const Login = () => {
             <div className="space-y-2">
               <Label htmlFor="email" className="text-neutral-300 ml-1">Email Address</Label>
               <div className="relative group">
-                <Mail className="absolute left-3 top-3 w-4 h-4 text-neutral-500 group-focus-within:text-blue-500 transition-colors" />
+                <Mail className="absolute left-3 top-3 w-4 h-4 text-neutral-500 group-focus-within:text-pine transition-colors" />
                 <Input
                   id="email"
                   type="email"
                   placeholder="admin@baguio.gov.ph"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10 bg-neutral-800/50 border-neutral-700/50 text-white placeholder:text-neutral-600 focus:ring-blue-500/50 focus:border-blue-500/50 h-11 transition-all"
+                  className="pl-10 bg-neutral-800/50 border-neutral-700/50 text-white placeholder:text-neutral-600 focus:ring-pine/50 focus:border-pine/50 h-11 transition-all"
                   required
                 />
               </div>
@@ -98,19 +98,19 @@ const Login = () => {
             <div className="space-y-2">
               <div className="flex justify-between items-center ml-1">
                 <Label htmlFor="password" text-neutral-300>Password</Label>
-                <button type="button" className="text-xs text-blue-500 hover:text-blue-400 transition-colors">
+                <button type="button" className="text-xs text-pine hover:text-pine-light transition-colors">
                   Forgot?
                 </button>
               </div>
               <div className="relative group">
-                <Lock className="absolute left-3 top-3 w-4 h-4 text-neutral-500 group-focus-within:text-blue-500 transition-colors" />
+                <Lock className="absolute left-3 top-3 w-4 h-4 text-neutral-500 group-focus-within:text-pine transition-colors" />
                 <Input
                   id="password"
                   type="password"
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10 bg-neutral-800/50 border-neutral-700/50 text-white placeholder:text-neutral-600 focus:ring-blue-500/50 focus:border-blue-500/50 h-11 transition-all"
+                  className="pl-10 bg-neutral-800/50 border-neutral-700/50 text-white placeholder:text-neutral-600 focus:ring-pine/50 focus:border-pine/50 h-11 transition-all"
                   required
                 />
               </div>
@@ -119,7 +119,7 @@ const Login = () => {
             <Button 
               type="submit" 
               disabled={isSubmitting}
-              className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold h-12 transition-all duration-300 transform active:scale-95 group shadow-lg shadow-blue-900/20"
+              className="w-full bg-pine hover:bg-pine-light text-white font-semibold h-12 transition-all duration-300 transform active:scale-95 group shadow-lg shadow-pine/20"
             >
               {isSubmitting ? (
                 <Loader2 className="w-5 h-5 animate-spin" />

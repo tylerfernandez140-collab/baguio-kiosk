@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useKiosk } from '@/context/KioskContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { LayoutDashboard, Users, Settings, LogOut, ChevronRight, Loader2, Search, Edit2, Check, X, Building, RotateCcw, Upload, Image as ImageIcon } from 'lucide-react';
+import { LogOut, Loader2, Search, Edit2, Check, X, Building, Upload, Image as ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { cityHallFloors, Office } from '@/data/kioskData';
@@ -26,7 +26,7 @@ const Admin = () => {
   const { user, loading } = useAuth();
   const { labels, updateLabel, offices, refreshOffices } = useKiosk();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState('offices');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingLabelKey, setEditingLabelKey] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
@@ -126,10 +126,15 @@ const Admin = () => {
     }
   };
 
-  const handleSave3DLabel = (floorId: string, key: string) => {
-    updateLabel(floorId, key, editValue);
-    setEditingLabelKey(null);
-    toast.success('3D Map Label updated successfully');
+  const handleSave3DLabel = async (floorId: string, key: string) => {
+    try {
+      await updateLabel(floorId, key, editValue);
+      setEditingLabelKey(null);
+      toast.success('3D Map Label updated successfully');
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to save changes to database');
+    }
   };
 
   const displayOffices = localOffices.length > 0 ? localOffices : offices;
@@ -209,7 +214,7 @@ const Admin = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-neutral-950 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+        <Loader2 className="w-8 h-8 text-pine animate-spin" />
       </div>
     );
   }
@@ -223,28 +228,16 @@ const Admin = () => {
       {/* Sidebar */}
       <aside className="w-64 border-r border-neutral-800 bg-neutral-900/50 backdrop-blur-md p-6 flex flex-col gap-8">
         <div className="flex items-center gap-3 px-2">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-bold">B</div>
+          <div className="w-8 h-8 bg-pine rounded-lg flex items-center justify-center font-bold text-white shadow-lg shadow-pine/20">B</div>
           <span className="font-bold text-xl tracking-tight">Admin Kiosk</span>
         </div>
         
         <nav className="flex-1 flex flex-col gap-2">
           <NavItem 
-            icon={<LayoutDashboard size={18} />} 
-            label="Dashboard" 
-            active={activeTab === 'dashboard'} 
-            onClick={() => setActiveTab('dashboard')}
-          />
-          <NavItem 
             icon={<Building size={18} />} 
             label="Manage Offices" 
             active={activeTab === 'offices'}
             onClick={() => setActiveTab('offices')}
-          />
-          <NavItem 
-            icon={<Settings size={18} />} 
-            label="Settings" 
-            active={activeTab === 'settings'}
-            onClick={() => setActiveTab('settings')}
           />
         </nav>
 
@@ -260,61 +253,12 @@ const Admin = () => {
 
       {/* Main Content */}
       <main className="flex-1 p-8 overflow-y-auto">
-        {activeTab === 'dashboard' ? (
-          <>
-            <header className="flex justify-between items-center mb-12">
-              <div>
-                <h1 className="text-4xl font-bold tracking-tight mb-2">Welcome Back</h1>
-                <p className="text-neutral-400">Here's what's happening with the Baguio City Hall Kiosk.</p>
-              </div>
-              <div className="flex gap-4">
-                <Button 
-                  className="bg-neutral-800 hover:bg-neutral-700 border-neutral-700 gap-2"
-                  onClick={fetchOffices}
-                  disabled={isRefreshing}
-                >
-                  {isRefreshing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw size={16} />}
-                  Refresh Data
-                </Button>
-                <Button className="bg-blue-600 hover:bg-blue-500">Add New Entry</Button>
-              </div>
-            </header>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-              <StatCard title="Total Offices" value={displayOffices.length.toString()} change="+3 this month" />
-              <StatCard title="Daily Searches" value="1,284" change="+12% from yesterday" />
-              <StatCard title="Active Kiosks" value="8" change="All systems go" />
-            </div>
-
-            <section className="bg-neutral-900/50 border border-neutral-800 rounded-2xl p-8 backdrop-blur-sm">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-semibold">Recent Activity</h2>
-                <Button variant="link" className="text-blue-400 p-0">View All <ChevronRight size={16} /></Button>
-              </div>
-              <div className="space-y-4">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="flex items-center justify-between p-4 bg-neutral-800/40 rounded-xl border border-neutral-800 hover:border-neutral-700 transition-colors">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500">
-                        <Users size={20} />
-                      </div>
-                      <div>
-                        <h4 className="font-medium">Mayor's Office Updated</h4>
-                        <p className="text-sm text-neutral-500">Room 102 details were modified by admin</p>
-                      </div>
-                    </div>
-                    <span className="text-sm text-neutral-500">2 hours ago</span>
-                  </div>
-                ))}
-              </div>
-            </section>
-          </>
-        ) : activeTab === 'offices' ? (
+        {activeTab === 'offices' ? (
           <>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-7">
             <div>
               <CardTitle className="text-2xl font-bold flex items-center gap-2">
-                <Building className="text-blue-500" />
+                <Building className="text-pine" />
                 Office Directory Management
               </CardTitle>
               <CardDescription>
@@ -322,18 +266,13 @@ const Admin = () => {
               </CardDescription>
             </div>
           </CardHeader>
-            <header className="flex justify-between items-center mb-8">
-              <Button className="bg-blue-600 hover:bg-blue-500 flex gap-2">
-                <Building size={18} />
-                Add New Office
-              </Button>
-            </header>
+
 
             <Tabs defaultValue="offices" className="w-full">
               <div className="flex justify-between items-center mb-6">
                 <TabsList className="bg-neutral-900 border border-neutral-800 p-1">
-                  <TabsTrigger value="offices" className="data-[state=active]:bg-blue-600">Offices List</TabsTrigger>
-                  <TabsTrigger value="labels" className="data-[state=active]:bg-blue-600">3D Map Labels</TabsTrigger>
+                  <TabsTrigger value="offices" className="data-[state=active]:bg-pine text-white">Offices List</TabsTrigger>
+                  <TabsTrigger value="labels" className="data-[state=active]:bg-pine text-white">3D Map Labels</TabsTrigger>
                 </TabsList>
               </div>
 
@@ -477,8 +416,8 @@ const Admin = () => {
             </Tabs>
           </>
         ) : (
-          <div className="flex items-center justify-center h-full text-neutral-500">
-            Select a section from the sidebar to continue.
+          <div className="flex items-center justify-center h-full text-neutral-500 italic">
+            Please use the sidebar to manage your kiosk directory.
           </div>
         )}
       </main>
@@ -507,7 +446,7 @@ const OfficeList = ({
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" size={18} />
           <Input 
             placeholder="Search directory entries..." 
-            className="pl-10 bg-neutral-900 border-neutral-800 focus:ring-blue-500"
+            className="pl-10 bg-neutral-900 border-neutral-800 focus:ring-pine"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -518,9 +457,8 @@ const OfficeList = ({
         <Table>
           <TableHeader className="bg-neutral-900">
             <TableRow className="border-neutral-800 hover:bg-transparent">
-              <TableHead className="w-[250px] text-neutral-400 font-semibold">Office Name (From Map)</TableHead>
-              <TableHead className="w-[200px] text-neutral-400 font-semibold">Officer In Charge</TableHead>
-              <TableHead className="text-neutral-400 font-semibold">Description</TableHead>
+              <TableHead className="w-[300px] text-neutral-400 font-semibold">Office Name (From Map)</TableHead>
+              <TableHead className="text-neutral-400 font-semibold">Directory Image</TableHead>
               <TableHead className="w-[120px] text-right text-neutral-400 font-semibold">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -540,77 +478,66 @@ const OfficeList = ({
                 
                 <TableCell className="align-top py-4">
                   {editingId === office.id ? (
-                    <div className="flex flex-col gap-2">
-                      <Input 
-                        value={office.officer || ''}
-                        onChange={(e) => setOffices((prev: any[]) => prev.map(o => o.id === office.id ? { ...o, officer: e.target.value } : o))}
-                        className="bg-neutral-800 border-neutral-700 h-8 text-xs"
-                        placeholder="Officer name"
-                      />
-                      <div className="flex flex-col gap-2">
-                        <div className="relative group">
-                          {uploadingStatus[office.id] !== undefined ? (
-                            <div className="w-full h-12 border border-neutral-800 rounded flex flex-col items-center justify-center p-2 gap-2">
-                              <Progress value={uploadingStatus[office.id]} className="h-1 animate-pulse" />
-                              <span className="text-[10px] text-blue-400 font-medium">
-                                {uploadingStatus[office.id] === 100 ? 'Finalizing...' : 'Uploading...'}
-                              </span>
+                    <div className="flex flex-col gap-2 max-w-[200px]">
+                      <div className="relative group">
+                        {uploadingStatus[office.id] !== undefined ? (
+                          <div className="w-full h-24 border border-neutral-800 rounded flex flex-col items-center justify-center p-2 gap-2 bg-neutral-900/50">
+                            <Progress value={uploadingStatus[office.id]} className="h-1 w-full animate-pulse" />
+                            <span className="text-[10px] text-sky font-medium">
+                              {uploadingStatus[office.id] === 100 ? 'Finalizing...' : 'Uploading...'}
+                            </span>
+                          </div>
+                        ) : office.image_url ? (
+                          <div className="relative w-full h-24 rounded border border-neutral-700 overflow-hidden shadow-xl bg-neutral-950">
+                            <img src={office.image_url} alt="Office" className="w-full h-full object-cover" />
+                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                              <label className="cursor-pointer text-xs text-white flex items-center gap-2 font-medium">
+                                <Upload size={14} /> Change Image
+                                <input 
+                                  type="file" 
+                                  className="hidden" 
+                                  accept="image/*"
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) handleImageUpload(file, office.id);
+                                  }}
+                                />
+                              </label>
                             </div>
-                          ) : office.image_url ? (
-                            <div className="relative w-full h-12 rounded border border-neutral-700 overflow-hidden">
-                              <img src={office.image_url} alt="Office" className="w-full h-full object-cover" />
-                              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                                <label className="cursor-pointer text-[10px] text-white flex items-center gap-1">
-                                  <Upload size={10} /> Change
-                                  <input 
-                                    type="file" 
-                                    className="hidden" 
-                                    accept="image/*"
-                                    onChange={(e) => {
-                                      const file = e.target.files?.[0];
-                                      if (file) handleImageUpload(file, office.id);
-                                    }}
-                                  />
-                                </label>
-                              </div>
-                              {/* Success indicator */}
-                              <div className="absolute top-1 right-1 bg-green-500 rounded-full p-0.5 shadow-lg">
-                                <Check size={8} className="text-white" />
-                              </div>
+                            <div className="absolute top-2 right-2 bg-green-500 rounded-full p-1 shadow-lg">
+                              <Check size={10} className="text-white" />
                             </div>
-                          ) : (
-                            <label className="w-full h-12 border-2 border-dashed border-neutral-800 rounded flex flex-col items-center justify-center gap-1 text-neutral-500 hover:border-neutral-700 hover:text-neutral-400 cursor-pointer transition-all">
-                              <ImageIcon size={14} />
-                              <span className="text-[10px]">Upload Photo</span>
-                              <input 
-                                type="file" 
-                                className="hidden" 
-                                accept="image/*"
-                                onChange={(e) => {
-                                  const file = e.target.files?.[0];
-                                  if (file) handleImageUpload(file, office.id);
-                                }}
-                              />
-                            </label>
-                          )}
-                        </div>
+                          </div>
+                        ) : (
+                          <label className="w-full h-24 border-2 border-dashed border-neutral-800 rounded flex flex-col items-center justify-center gap-2 text-neutral-500 hover:border-pine hover:text-pine hover:bg-pine/5 cursor-pointer transition-all">
+                            <ImageIcon size={20} />
+                            <span className="text-xs font-medium">Upload Photo</span>
+                            <input 
+                              type="file" 
+                              className="hidden" 
+                              accept="image/*"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) handleImageUpload(file, office.id);
+                              }}
+                            />
+                          </label>
+                        )}
                       </div>
                     </div>
                   ) : (
-                    <span className="text-neutral-300 text-sm">{office.officer || '—'}</span>
-                  )}
-                </TableCell>
-                
-                <TableCell className="align-top py-4">
-                  {editingId === office.id ? (
-                    <textarea 
-                      value={office.description || ''}
-                      onChange={(e) => setOffices((prev: any[]) => prev.map(o => o.id === office.id ? { ...o, description: e.target.value } : o))}
-                      className="w-full bg-neutral-800 border border-neutral-700 rounded p-2 text-xs text-white resize-none h-20 outline-none focus:border-blue-500"
-                      placeholder="Add description..."
-                    />
-                  ) : (
-                    <p className="text-neutral-500 text-sm line-clamp-2">{office.description || 'No description yet.'}</p>
+                    <div className="flex items-center gap-4">
+                      {office.image_url ? (
+                        <div className="w-16 h-16 rounded-lg border border-neutral-800 overflow-hidden bg-neutral-950">
+                          <img src={office.image_url} alt="" className="w-full h-full object-cover" />
+                        </div>
+                      ) : (
+                        <div className="w-16 h-16 rounded-lg border border-neutral-800 bg-neutral-900/50 flex items-center justify-center text-neutral-700">
+                          <ImageIcon size={20} />
+                        </div>
+                      )}
+                      <span className="text-neutral-500 text-xs italic">{office.image_url ? 'Image uploaded' : 'No image yet'}</span>
+                    </div>
                   )}
                 </TableCell>
                 
@@ -636,7 +563,7 @@ const OfficeList = ({
             ))}
             {offices.length === 0 && (
               <TableRow>
-                <TableCell colSpan={4} className="h-24 text-center text-neutral-500 italic">
+                <TableCell colSpan={3} className="h-24 text-center text-neutral-500 italic">
                   No directory entries found for this floor.
                 </TableCell>
               </TableRow>
@@ -681,7 +608,7 @@ const LabelGrid = ({
                 <textarea 
                   value={editValue}
                   onChange={(e) => setEditValue(e.target.value)}
-                  className="bg-neutral-800 border-blue-500 rounded p-2 text-sm text-white resize-none h-16 outline-none"
+                  className="bg-neutral-800 border-pine rounded p-2 text-sm text-white resize-none h-16 outline-none"
                   autoFocus
                 />
                 <div className="flex justify-end gap-2">
@@ -707,7 +634,7 @@ const NavItem = ({ icon, label, active = false, onClick }: { icon: React.ReactNo
   <button 
     onClick={onClick}
     className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 w-full ${
-      active ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'text-neutral-400 hover:text-white hover:bg-neutral-800'
+      active ? 'bg-pine text-white shadow-lg shadow-pine/20' : 'text-neutral-400 hover:text-white hover:bg-neutral-800'
     }`}
   >
     {icon}
@@ -722,7 +649,7 @@ const StatCard = ({ title, value, change }: { title: string; value: string; chan
       <CardTitle className="text-3xl font-bold">{value}</CardTitle>
     </CardHeader>
     <CardContent>
-      <p className="text-sm text-blue-400 font-medium">{change}</p>
+      <p className="text-sm text-gold font-medium">{change}</p>
     </CardContent>
   </Card>
 );

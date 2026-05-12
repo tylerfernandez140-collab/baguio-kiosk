@@ -22,7 +22,7 @@ export const DashboardTab = ({ totalOffices, isRefreshing, onRefresh }: Dashboar
             {isRefreshing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw size={16} />}
             Refresh Data
           </Button>
-          <Button className="bg-blue-600 hover:bg-blue-500">Add New Entry</Button>
+          <Button className="bg-pine hover:bg-pine-light text-white border-none">Add New Entry</Button>
         </div>
       </header>
 
@@ -35,13 +35,13 @@ export const DashboardTab = ({ totalOffices, isRefreshing, onRefresh }: Dashboar
       <section className="bg-neutral-900/50 border border-neutral-800 rounded-2xl p-8 backdrop-blur-sm">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-semibold">Recent Activity</h2>
-          <Button variant="link" className="text-blue-400 p-0">View All <ChevronRight size={16} /></Button>
+          <Button variant="link" className="text-sky p-0">View All <ChevronRight size={16} /></Button>
         </div>
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
             <div key={i} className="flex items-center justify-between p-4 bg-neutral-800/40 rounded-xl border border-neutral-800 hover:border-neutral-700 transition-colors">
               <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500">
+                <div className="w-10 h-10 rounded-full bg-pine/10 flex items-center justify-center text-pine">
                   <Users size={20} />
                 </div>
                 <div>

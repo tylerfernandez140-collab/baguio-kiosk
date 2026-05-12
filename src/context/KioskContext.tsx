@@ -159,7 +159,15 @@ export const KioskProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         const newLabels: Record<string, Record<string, string>> = JSON.parse(JSON.stringify(initialFloorLabels));
         data.forEach((item: any) => {
           if (!newLabels[item.floor_id]) newLabels[item.floor_id] = {};
-          newLabels[item.floor_id][item.label_key] = item.label_text;
+          // Find existing key case-insensitively
+          const existingKey = Object.keys(newLabels[item.floor_id]).find(
+            k => k.toLowerCase() === item.label_key.toLowerCase()
+          );
+          if (existingKey) {
+            newLabels[item.floor_id][existingKey] = item.label_text;
+          } else {
+            newLabels[item.floor_id][item.label_key] = item.label_text;
+          }
         });
         setLabels(newLabels);
       }
@@ -175,14 +183,31 @@ export const KioskProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         'postgres_changes',
         { event: '*', schema: 'public', table: 'floor_labels' },
         (payload) => {
-          const { floor_id, label_key, label_text } = payload.new as any;
-          setLabels(prev => ({
-            ...prev,
-            [floor_id]: {
-              ...prev[floor_id],
-              [label_key]: label_text
+          const { floor_id, label_key, label_text } = (payload.new || payload.old) as any;
+          if (!floor_id || !label_key) return;
+          
+          setLabels(prev => {
+            const floorLabels = { ...(prev[floor_id] || {}) };
+            const existingKey = Object.keys(floorLabels).find(
+              k => k.toLowerCase() === label_key.toLowerCase()
+            );
+            
+            if (payload.eventType === 'DELETE') {
+              if (existingKey) delete floorLabels[existingKey];
+            } else {
+              // Update or Insert
+              if (existingKey) {
+                floorLabels[existingKey] = label_text;
+              } else {
+                floorLabels[label_key] = label_text;
+              }
             }
-          }));
+            
+            return {
+              ...prev,
+              [floor_id]: floorLabels
+            };
+          });
         }
       )
       .subscribe();
@@ -207,25 +232,48 @@ export const KioskProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const updateLabel = async (floorId: string, labelKey: string, newValue: string) => {
     // 1. Update local state for immediate feedback
-    setLabels(prev => ({
-      ...prev,
-      [floorId]: {
-        ...prev[floorId],
-        [labelKey]: newValue
+    setLabels(prev => {
+      const floorLabels = { ...(prev[floorId] || {}) };
+      // Find existing key case-insensitively in state
+      const existingKey = Object.keys(floorLabels).find(
+        k => k.toLowerCase() === labelKey.toLowerCase()
+      );
+      floorLabels[existingKey || labelKey] = newValue;
+      return { ...prev, [floorId]: floorLabels };
+    });
+
+    try {
+      // 2. Find existing record in Supabase to get its exact ID and label_key
+      const { data: existing } = await supabase
+        .from('floor_labels')
+        .select('id, label_key')
+        .eq('floor_id', floorId)
+        .ilike('label_key', labelKey)
+        .maybeSingle();
+
+      if (existing) {
+        // Update the existing row by ID
+        const { error: updateError } = await supabase
+          .from('floor_labels')
+          .update({ label_text: newValue, label_key: existing.label_key })
+          .eq('id', existing.id);
+        
+        if (updateError) throw updateError;
+      } else {
+        // Insert a new row if it doesn't exist
+        const { error: insertError } = await supabase
+          .from('floor_labels')
+          .insert({ 
+            floor_id: floorId, 
+            label_key: labelKey, 
+            label_text: newValue 
+          });
+          
+        if (insertError) throw insertError;
       }
-    }));
-
-    // 2. Persist to Supabase
-    const { error } = await supabase
-      .from('floor_labels')
-      .upsert({ 
-        floor_id: floorId, 
-        label_key: labelKey, 
-        label_text: newValue 
-      }, { onConflict: 'floor_id,label_key' });
-
-    if (error) {
-      console.error('Error updating label in Supabase:', error);
+    } catch (error) {
+      console.error('Error persisting label to Supabase:', error);
+      // Revert local state or handle error? For now just log.
     }
   };
 
