@@ -204,109 +204,98 @@ const firstFloorPathsKiosk2: Record<string, THREE.Vector3[]> = {
     new THREE.Vector3(-5.98, 0.01, 0.78), 
     new THREE.Vector3(-5.98, 0.01, 0.96),
     new THREE.Vector3(5.72, 0.01, 0.96),
-    new THREE.Vector3(5.72, 0.01, 1.15), 
+    new THREE.Vector3(5.72, 0.01, 2.00), 
   ],
   aimd: [
     new THREE.Vector3(-5.98, 0.01, 0.78), 
     new THREE.Vector3(-5.98, 0.01, 0.96),
-    new THREE.Vector3(5.72, 0.01, 0.96),
-    new THREE.Vector3(5.72, 0.01, 1.15), 
+    new THREE.Vector3(8.40, 0.01, 0.96),
+    new THREE.Vector3(8.40, 0.01, 2.00), 
   ],
   city_accountant: [
     new THREE.Vector3(-5.98, 0.01, 0.78), 
     new THREE.Vector3(-5.98, 0.01, 0.96),
-    new THREE.Vector3(0.62, 0.01, 0.96),
-    new THREE.Vector3(0.62, 0.01, 1.15), 
+    new THREE.Vector3(1.62, 0.01, 0.96),
+    new THREE.Vector3(1.62, 0.01, 2.00), 
   ],
-  city_auditors: [
-    new THREE.Vector3(-5.98, 0.01, 0.78), 
+  city_auditors: [ 
     new THREE.Vector3(-5.98, 0.01, 0.96),
-    new THREE.Vector3(-1.35, 0.01, 0.96),
-    new THREE.Vector3(-1.35, 0.01, 1.15), 
+    new THREE.Vector3(-0.40, 0.01, 0.96),
+    new THREE.Vector3(-0.40, 0.01, 2.00),
   ],
   city_auditors_2: [
-    new THREE.Vector3(-5.98, 0.01, 0.78), 
     new THREE.Vector3(-5.98, 0.01, 0.96),
-    new THREE.Vector3(-0.75, 0.01, 0.96),
-    new THREE.Vector3(-0.75, 0.01, 0.70), 
+    new THREE.Vector3(0.40, 0.01, 0.96),
+    new THREE.Vector3(0.40, 0.01, 0.20), 
   ],
-  licensing: [
-    new THREE.Vector3(-5.98, 0.01, 0.78), 
+  licensing: [ 
     new THREE.Vector3(-5.98, 0.01, 0.96),
-    new THREE.Vector3(1, 0.01, 0.96),
-    new THREE.Vector3(1, 0.01, 0.70), 
+    new THREE.Vector3(1.90, 0.01, 0.96),
+    new THREE.Vector3(1.90, 0.01, -0.10), 
   ], 
-  cr_male: [
-    new THREE.Vector3(-5.98, 0.01, 0.78), 
+  cr_male: [ 
     new THREE.Vector3(-5.98, 0.01, 0.96),
-    new THREE.Vector3(1.95, 0.01, 0.96),
-    new THREE.Vector3(1.95, 0.01, 0.70), 
+    new THREE.Vector3(2.85, 0.01, 0.96),
+    new THREE.Vector3(2.85, 0.01, -0.20), 
   ], 
-  clinic: [
-    new THREE.Vector3(-5.98, 0.01, 0.78), 
+  clinic: [ 
     new THREE.Vector3(-5.98, 0.01, 0.96),
-    new THREE.Vector3(2.23, 0.01, 0.96),
-    new THREE.Vector3(2.23, 0.01, -0.75),
-    new THREE.Vector3(2.10, 0.01, -0.75), 
+    new THREE.Vector3(3.23, 0.01, 0.96),
+    new THREE.Vector3(3.17, 0.01, -1.25), 
+    new THREE.Vector3(3.00, 0.01, -1.25),
   ],    
   mitd: [
     new THREE.Vector3(-5.98, 0.01, 0.78), 
     new THREE.Vector3(-5.98, 0.01, 0.96),
-    new THREE.Vector3(3.60, 0.01, 0.96),
-    new THREE.Vector3(3.60, 0.01, -1), 
+    new THREE.Vector3(4.5, 0.01, 0.96),
+    new THREE.Vector3(4.5, 0.01, -1.5), 
   ],    
-  cr__female: [
-    new THREE.Vector3(-5.98, 0.01, 0.78), 
+  cr__female: [ 
     new THREE.Vector3(-5.98, 0.01, 0.96),
-    new THREE.Vector3(3.90, 0.01, 0.96),
-    new THREE.Vector3(3.90, 0.01, 0.72), 
+    new THREE.Vector3(4.90, 0.01, 0.96),
+    new THREE.Vector3(4.90, 0.01, 0.20), 
   ],
   coop: [
-    new THREE.Vector3(-5.98, 0.01, 0.78), 
     new THREE.Vector3(-5.98, 0.01, 0.96),
     new THREE.Vector3(4.45, 0.01, 0.96),
     new THREE.Vector3(4.45, 0.01, 0.72), 
   ],          
-  sp_admin: [
-    new THREE.Vector3(-5.98, 0.01, 0.78), 
+  sp_admin: [ 
     new THREE.Vector3(-5.98, 0.01, 0.96),
     new THREE.Vector3(6.25, 0.01, 0.96),
-    new THREE.Vector3(6.25, 0.01, 0.72), 
+    new THREE.Vector3(6.25, 0.01, 0.18), 
   ],   
-  cdcc: [
-    new THREE.Vector3(-5.98, 0.01, 0.78), 
+  cdcco: [ 
     new THREE.Vector3(-5.98, 0.01, 0.96),
-    new THREE.Vector3(8.20, 0.01, 0.96),
-    new THREE.Vector3(8.20, 0.01, 0.72), 
+    new THREE.Vector3(8.90, 0.01, 0.96),
+    new THREE.Vector3(8.90, 0.01, 0.12), 
   ],   
   city_planning_office: [
-    new THREE.Vector3(-5.98, 0.01, 0.78), 
     new THREE.Vector3(-5.98, 0.01, 0.96),
-    new THREE.Vector3(9.65, 0.01, 0.96),
-    new THREE.Vector3(9.65, 0.01, 0.72), 
+    new THREE.Vector3(11.00, 0.01, 0.96),
+    new THREE.Vector3(11.00, 0.01, 0.12), 
   ],
   city_budget_office: [
-    new THREE.Vector3(-5.98, 0.01, 0.78), 
     new THREE.Vector3(-5.98, 0.01, 0.96),
-    new THREE.Vector3(9.65, 0.01, 0.96),
-    new THREE.Vector3(9.65, 0.01, 1.20), 
+    new THREE.Vector3(11.00, 0.01, 0.96),
+    new THREE.Vector3(11.00, 0.01, 2.00), 
   ],     
-  city_treasurers: [
-    new THREE.Vector3(-5.98, 0.01, 0.78), 
+  city_treasurers: [ 
     new THREE.Vector3(-5.98, 0.01, 0.96),
-    new THREE.Vector3(-3.50, 0.01, 0.96),
-    new THREE.Vector3(-3.50, 0.01, 0.7), 
+    new THREE.Vector3(-1.80, 0.01, 0.96), 
+    new THREE.Vector3(-1.80, 0.01, -1.36),
+    new THREE.Vector3(-2.70, 0.01, -1.36),
   ],  
-  city_treasurers_2: [
-    new THREE.Vector3(-5.98, 0.01, 0.78), 
+  city_treasurers_2: [ 
     new THREE.Vector3(-5.98, 0.01, 0.96),
     new THREE.Vector3(-3.50, 0.01, 0.96),
-    new THREE.Vector3(-3.50, 0.01, 1.20), 
+    new THREE.Vector3(-3.50, 0.01, 0.42), 
   ],  
   one_stop_shop: [
     new THREE.Vector3(-5.98, 0.01, 0.78), 
-    new THREE.Vector3(-5.98, 0.01, 0.47),
-    new THREE.Vector3(-7.75, 0.01, 0.47), 
+    new THREE.Vector3(-7.00, 0.01, 0.79),
+    new THREE.Vector3(-7.00, 0.01, 0.15),
+    new THREE.Vector3(-8.45, 0.01, 0.15),  
   ],  
   'cr_one_stop+shop': [
     new THREE.Vector3(-5.98, 0.01, 0.78), 
@@ -314,25 +303,21 @@ const firstFloorPathsKiosk2: Record<string, THREE.Vector3[]> = {
     new THREE.Vector3(-9.65, 0.01, -0.70),
   ],
   stairs: [
-    new THREE.Vector3(-5.98, 0.01, 0.78), 
     new THREE.Vector3(-5.98, 0.01, 0.96),
     new THREE.Vector3(2.90, 0.01, 0.96),
     new THREE.Vector3(2.90, 0.01, 0.5),
   ],
   stairs_basement: [
-    new THREE.Vector3(-5.98, 0.01, 0.78), 
     new THREE.Vector3(-5.98, 0.01, 0.96),
     new THREE.Vector3(2.93, 0.01, 0.96),
     new THREE.Vector3(2.93, 0.01, 2.98), // Basement stairwell entrance
   ],
   stairs_basement_left: [
-    new THREE.Vector3(-5.98, 0.01, 0.78), 
     new THREE.Vector3(-5.98, 0.01, 0.96),
     new THREE.Vector3(2.93, 0.01, 0.96),
     new THREE.Vector3(2.93, 0.01, 2.98), // Basement stairwell entrance
   ],
-  entrance: [
-    new THREE.Vector3(-5.98, 0.01, 0.78), 
+  entrance: [ 
     new THREE.Vector3(-5.98, 0.01, 0.96),
     new THREE.Vector3(2.93, 0.01, 0.96),
     new THREE.Vector3(2.93, 0.01, 2.98), // Basement stairwell entrance
