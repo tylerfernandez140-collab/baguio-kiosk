@@ -112,8 +112,10 @@ function Model({
     const isPath = name.includes('path');
     const isTriangle = name.includes('traingle');
     const isPWD = name.includes('pwd');
+    const isKitchen = name.includes('kit');
+    const isLounge = name.includes('lounge');
     
-    if (isBase || isDisc || isPath || isTriangle || isPWD) {
+    if (isBase || isDisc || isPath || isTriangle || isPWD || isKitchen || isLounge) {
       onSelectOffice?.(null, new THREE.Vector3());
       return;
     }
@@ -242,8 +244,10 @@ function Model({
           const isPath = name.includes('path');
           const isTriangle = name.includes('traingle');
           const isPWD = name.includes('pwd');
+          const isKitchen = name.includes('kit');
+          const isLounge = name.includes('lounge');
 
-          if (!isBase && !isDisc && !isTriangle && !isPWD && !isPath) {
+          if (!isBase && !isDisc && !isTriangle && !isPWD && !isPath && !isKitchen && !isLounge) {
             const childBox = new THREE.Box3().setFromObject(child);
             const localCenter = new THREE.Vector3();
             childBox.getCenter(localCenter);

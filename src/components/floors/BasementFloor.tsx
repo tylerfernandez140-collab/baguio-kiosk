@@ -73,25 +73,6 @@ gso: [
     new THREE.Vector3(10.33, 0.01, 1.55),
 
   ],
-  kit: [
-    new THREE.Vector3(-6.7, 0.01, 0.98),
-    new THREE.Vector3(-8.15, 0.01, 0.98),
-    new THREE.Vector3(-8.15, 0.01, 0.08),
-    new THREE.Vector3(-9.07, 0.01, 0.08),
-    new THREE.Vector3(-9.07, 0.01, -0.29),
-    new THREE.Vector3(-9.86, 0.01, -0.29),
-
-  ],
-  lounge: [
-    new THREE.Vector3(-6.7, 0.01, 0.98),
-    new THREE.Vector3(-8.15, 0.01, 0.98),
-    new THREE.Vector3(-8.15, 0.01, 0.08),
-    new THREE.Vector3(-9.07, 0.01, 0.08),
-    new THREE.Vector3(-9.07, 0.01, -0.29),
-    new THREE.Vector3(-9.48, 0.01, -0.29),
-    new THREE.Vector3(-9.48, 0.01, -0.54),
-
-  ],
   daycare: [
     new THREE.Vector3(-6.7, 0.01, 0.98),
     new THREE.Vector3(-8.15, 0.01, 0.98),
