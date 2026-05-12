@@ -271,12 +271,12 @@ const secondFloorPaths: Record<string, THREE.Vector3[]> = {
     new THREE.Vector3(8.35, 0.01, 1.33),
   ],
   stairs: [
-    new THREE.Vector3(2.14, 0.01, -0.14),
-    new THREE.Vector3(2.13, 0.01, 1.04),
-    new THREE.Vector3(-4.55, 0.01, 1.04),
-    new THREE.Vector3(-4.55, 0.01, 0.7),
-    new THREE.Vector3(-6.9, 0.01, 0.7),
-    new THREE.Vector3(-6.9, 0.01, -1.09),
+    new THREE.Vector3(2.3, 0.01, -0.76),
+    new THREE.Vector3(2.3, 0.01, 0.6),
+    new THREE.Vector3(-4.55, 0.01, 0.6),
+    new THREE.Vector3(-4.7, 0.01, 0.06),
+    new THREE.Vector3(-7.56, 0.01, 0.06),
+    new THREE.Vector3(-7.56, 0.01, -1.57),
   ],
   stairs_hr: [
     new THREE.Vector3(2.3, 0.01, -0.76),

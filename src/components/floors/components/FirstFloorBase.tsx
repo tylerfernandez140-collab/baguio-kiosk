@@ -557,11 +557,21 @@ export default function FloorBase({
       if (navigation.floorId === 'basement') {
         // Offices that use the left stairs
         const leftSideOffices = ['daycare', 'sports', 'lounge', 'kit'];
+        // Offices that use the alternate (right) stairs
+        const altSideOffices = ['pr', 'councilor', 'ofortod', 'ceapmo'];
         const targetOffice = navigation.officeId.toLowerCase().replace(/[^a-z]/g, '');
         
         if (leftSideOffices.includes(targetOffice)) {
           if (predefinedPaths['stairs_basement_left']) {
             setActivePath(predefinedPaths['stairs_basement_left']);
+          } else {
+            setActivePath(null);
+          }
+        } else if (altSideOffices.includes(targetOffice)) {
+          if (predefinedPaths['stairs_basement_alt']) {
+            setActivePath(predefinedPaths['stairs_basement_alt']);
+          } else if (predefinedPaths['stairs_basement']) {
+            setActivePath(predefinedPaths['stairs_basement']);
           } else {
             setActivePath(null);
           }

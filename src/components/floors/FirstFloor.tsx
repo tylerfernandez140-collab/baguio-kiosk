@@ -165,11 +165,11 @@ const firstFloorPaths: Record<string, THREE.Vector3[]> = {
     new THREE.Vector3(-5.75, 0.01, 0.96),
     new THREE.Vector3(-5.75, 0.01, 0.74), 
   ],
-  entrance: [
+
+  stairs_basement: [
     new THREE.Vector3(3.20, 0.001, 2.5), 
     new THREE.Vector3(3.20, 0.001, 3.65),
   ],
-
 };
 
 // Kiosk 2 "You Are Here" starting position
@@ -288,8 +288,23 @@ const firstFloorPathsKiosk2: Record<string, THREE.Vector3[]> = {
   stairs: [
     new THREE.Vector3(-5.98, 0.1, 0.78),
     new THREE.Vector3(-5.98, 0.01, 0.38),
+  ],//kiosk 2 second floor
+  // Path for Kiosk 2 to reach the Left Basement Stairs (Daycare, Sports, etc.)
+  stairs_basement_left: [
+    new THREE.Vector3(-5.98, 0.01, 0.78),
+    new THREE.Vector3(-5.98, 0.01, 0.38),
   ],
-
+  // Path for Kiosk 2 to reach the Main Basement Stairs (GSO, etc.)
+  stairs_basement: [
+    new THREE.Vector3(-5.98, 0.01, 0.78),
+    new THREE.Vector3(-7.54, 0.01, 0.78),
+  ],
+  // Alternate entrance path for Kiosk 2 to go to the basement
+  stairs_basement_alt: [
+    new THREE.Vector3(-5.98, 0.01, 0.78),
+    new THREE.Vector3(2.90, 0.01, 0.78),
+    new THREE.Vector3(2.90, 0.01, 0.5),
+  ],
 
 };
 
