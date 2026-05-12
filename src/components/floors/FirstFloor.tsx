@@ -286,25 +286,11 @@ const firstFloorPathsKiosk2: Record<string, THREE.Vector3[]> = {
     new THREE.Vector3(-9.65, 0.01, -0.70),
   ],
   stairs: [
-    new THREE.Vector3(-5.98, 0.01, 0.96),
-    new THREE.Vector3(2.90, 0.01, 0.96),
-    new THREE.Vector3(2.90, 0.01, 0.5),
+    new THREE.Vector3(-5.98, 0.1, 0.78),
+    new THREE.Vector3(-5.98, 0.01, 0.38),
   ],
-  stairs_basement: [
-    new THREE.Vector3(-5.98, 0.01, 0.96),
-    new THREE.Vector3(2.93, 0.01, 0.96),
-    new THREE.Vector3(2.93, 0.01, 2.98), // Basement stairwell entrance
-  ],
-  stairs_basement_left: [
-    new THREE.Vector3(-5.98, 0.01, 0.96),
-    new THREE.Vector3(2.93, 0.01, 0.96),
-    new THREE.Vector3(2.93, 0.01, 2.98), // Basement stairwell entrance
-  ],
-  entrance: [ 
-    new THREE.Vector3(-5.98, 0.01, 0.96),
-    new THREE.Vector3(2.93, 0.01, 0.96),
-    new THREE.Vector3(2.93, 0.01, 2.98), // Basement stairwell entrance
-  ],
+
+
 };
 
 interface FirstFloorProps extends Omit<FloorBaseProps, 'floorId' | 'url' | 'labels' | 'offset'> {
@@ -352,7 +338,7 @@ export default function FirstFloor({
         // - UP to 2nd/3rd floor: main center stairs
         // - DOWN to basement: basement stairwell entrance (black area on right side)
         const stairsPosition: [number, number, number] = isGoingUp 
-          ? [3.8, 0.01, -0.1]      // Main stairs UP
+          ? (kioskId === 'kiosk_2' ? [-5.98, 0.01, 0.38] : [3.8, 0.01, -0.1])
           : [2.93, 0.5, 2.98];     // Exact position at basement stairwell entrance
         
         return <YouAreHere label={label} position={stairsPosition} isStairs />;
