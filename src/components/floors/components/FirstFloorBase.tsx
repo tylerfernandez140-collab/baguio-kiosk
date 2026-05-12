@@ -5,14 +5,15 @@ import { useThree, useFrame } from '@react-three/fiber';
 import { useKiosk } from '../../../context/KioskContext';
 import CameraAnimation from '../../CameraAnimation';
 import { getOfficeImageFilename } from '../../../data/floorLabels';
+import { createPortal } from 'react-dom';
+import { X } from 'lucide-react';
 
 // Component to display office image from Supabase or fallback to local
 function OfficeImage({ officeId, floorId, alt, offices, labels }: { officeId: string; floorId: string; alt: string; offices: any[]; labels: Record<string, string> }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  
   // Get the display label from floor_labels (label_text) using the 3D object name
   const displayLabel = labels[officeId] || labels[officeId.toLowerCase()];
-  
-  // Debug logging
-  console.log('OfficeImage:', { officeId, floorId, displayLabel, officesCount: offices.length });
   
   // Find office in Supabase data by matching offices.name with floor_labels.label_text
   const officeData = offices.find(o => {
@@ -24,26 +25,56 @@ function OfficeImage({ officeId, floorId, alt, offices, labels }: { officeId: st
     return false;
   });
   
-  if (officeData) {
-    console.log('Found match:', { officeName: officeData.name, image_url: officeData.image_url?.substring(0, 50) });
-  }
-  
   // Use Supabase image_url if available, otherwise fallback to local image
   const imageUrl = officeData?.image_url || `/${getOfficeImageFilename(officeId)}.jpg`;
-  console.log('Final imageUrl:', imageUrl);
   
   return (
-    <img
-      key={imageUrl}
-      src={imageUrl}
-      alt={alt}
-      className="w-full h-24 object-cover rounded mb-2"
-      style={{ display: 'block' }}
-      onError={(e) => {
-        console.error('Image failed to load:', imageUrl);
-        (e.target as HTMLImageElement).style.display = 'none';
-      }}
-    />
+    <>
+      <img
+        key={imageUrl}
+        src={imageUrl}
+        alt={alt}
+        className="w-full h-24 object-cover rounded mb-2 cursor-pointer transition-transform hover:scale-[1.02] active:scale-[0.98]"
+        style={{ display: 'block' }}
+        onClick={() => setIsExpanded(true)}
+        onError={(e) => {
+          console.error('Image failed to load:', imageUrl);
+          (e.target as HTMLImageElement).style.display = 'none';
+        }}
+      />
+
+      {isExpanded && createPortal(
+        <div 
+          className="fixed inset-0 z-[2147483647] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fade-in p-4 sm:p-8"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsExpanded(false);
+          }}
+        >
+          <div className="relative max-w-5xl w-full h-full flex flex-col items-center justify-center">
+            <button 
+              className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors z-10"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsExpanded(false);
+              }}
+            >
+              <X className="w-6 h-6" />
+            </button>
+            <img
+              src={imageUrl}
+              alt={alt}
+              className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+            <div className="absolute bottom-4 bg-black/50 text-white px-4 py-2 rounded-lg font-medium backdrop-blur-md">
+              {alt}
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+    </>
   );
 }
 
