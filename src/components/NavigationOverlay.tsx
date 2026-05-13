@@ -41,7 +41,7 @@ export function NavigationOverlay() {
       transitionLockRef.current = true;
       startFloorTransition();
       
-      // Synchronize with FloorTransitionOverlay durations - added extra buffer
+      // Synchronize with FloorTransitionOverlay durations
       setTimeout(() => {
         setSelectedFloor(currentStep.floorId);
         
@@ -52,9 +52,9 @@ export function NavigationOverlay() {
           // Keep the lock for a bit longer to prevent immediate double-switching
           setTimeout(() => {
             transitionLockRef.current = false;
-          }, 1000);
-        }, 2000); // Wait longer during the transition screen
-      }, 1000); // Give more time for the initial fade-out
+          }, 800);
+        }, 1300); // Matches transition hold
+      }, 700); // Matches initial fade-out
     }
   }, [navigation?.currentStepIndex, navigation?.isActive, navigation?.steps, selectedFloor]);
 

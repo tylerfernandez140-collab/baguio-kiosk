@@ -42,13 +42,13 @@ export function FloorTransitionOverlay({
           const fadeInTimer = setTimeout(() => {
             setPhase('complete');
             onComplete?.();
-          }, 800);
+          }, 500);
           
           return () => clearTimeout(fadeInTimer);
-        }, 2000); // Increased hold time
+        }, 1200); // Reduced hold time
         
         return () => clearTimeout(transitionTimer);
-      }, 1000); // Increased fade-out wait
+      }, 600); // Reduced fade-out wait
       
       return () => clearTimeout(fadeOutTimer);
     }

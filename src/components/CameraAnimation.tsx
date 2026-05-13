@@ -42,7 +42,7 @@ export function CameraAnimation({
   } | null>(null);
 
   // Eye level height for first-person walking
-  const EYE_HEIGHT = 3.0; // Higher to clearly see arrows
+  const EYE_HEIGHT = 2.2; // Slightly lower for better arrow visibility
   const WALKING_SPEED = 1.5; // Slower for smooth viewing
 
   // Easing function for smooth transitions
@@ -131,61 +131,72 @@ export function CameraAnimation({
       settings.firstFloorPosition[2]
     );
 
-    // STEP 1: Start with overview showing "You Are Here" and destination
-    setCameraMode('zoom-in');
+    // STEP 1: Determine if we need an overview or just start walking
+    // If we're already mid-navigation (e.g. switched floors), skip the high overview
+    const isContinuing = navigation.currentStepIndex > 0;
     
-    // Calculate overview position (high above, showing full path)
-    const pathCenter = new THREE.Vector3();
-    path.forEach(p => pathCenter.add(p));
-    pathCenter.divideScalar(path.length);
-    
-    // Calculate where the path goes - look at the destination
-    const pathEnd = path[path.length - 1];
-    const pathDirection = new THREE.Vector3().subVectors(pathEnd, startPos).normalize();
-    
-    // Overview position - high above start position
-    const overviewPos = new THREE.Vector3(
-      startPos.x,
-      18,
-      startPos.z + 8
+    // Calculate path direction
+    const pathDirection = new THREE.Vector3().subVectors(path[1] || path[0], path[0]).normalize();
+    const walkPos = new THREE.Vector3(
+      path[0].x - pathDirection.x * 2,
+      EYE_HEIGHT,
+      path[0].z - pathDirection.z * 2
     );
-    
-    // Keep look target consistent - always look toward the destination direction
-    const lookTarget = new THREE.Vector3().copy(startPos).add(pathDirection);
+    const lookTarget = new THREE.Vector3().copy(path[0]).add(pathDirection);
     lookTarget.y = 0;
 
-    // Walking position - at eye level, slightly behind start
-    const walkPos = new THREE.Vector3(
-      startPos.x - pathDirection.x * 2,
-      EYE_HEIGHT,
-      startPos.z - pathDirection.z * 2
-    );
-
-    // Set initial camera position
-    camera.position.copy(overviewPos);
-    if (controls) {
-      (controls as any).target.copy(lookTarget);
-      (controls as any).update();
-    }
-
-    // Zoom in while keeping the same look direction (no camera swing)
-    startTransition(
-      overviewPos,
-      lookTarget, // Same target
-      walkPos,
-      lookTarget, // Same target - prevents camera from looking around
-      2500,
-      () => {
-        // After zoom in, start walking
-        setCameraMode('walking');
-        walkingRef.current = {
-          pathIndex: 0,
-          segmentProgress: 0,
-          lastUpdate: Date.now(),
-          isActive: true,
-        };
+    if (isContinuing) {
+      // Jump immediately to the correct position and orientation
+      // This happens while the screen is black during the floor transition
+      setCameraMode('walking');
+      walkingRef.current = {
+        pathIndex: 0,
+        segmentProgress: 0,
+        lastUpdate: Date.now(),
+        isActive: true,
+      };
+      
+      camera.position.copy(walkPos);
+      if (controls) {
+        (controls as any).target.copy(lookTarget);
+        (controls as any).update();
       }
-    );
+    } else {
+      // Start with overview showing "You Are Here" and destination
+      setCameraMode('zoom-in');
+      
+      // Overview position - high above start position
+      const overviewPos = new THREE.Vector3(
+        path[0].x,
+        18,
+        path[0].z + 8
+      );
+      
+      // Set initial camera position
+      camera.position.copy(overviewPos);
+      if (controls) {
+        (controls as any).target.copy(lookTarget);
+        (controls as any).update();
+      }
+
+      // Zoom in while keeping the same look direction (no camera swing)
+      startTransition(
+        overviewPos,
+        lookTarget,
+        walkPos,
+        lookTarget,
+        2500,
+        () => {
+          setCameraMode('walking');
+          walkingRef.current = {
+            pathIndex: 0,
+            segmentProgress: 0,
+            lastUpdate: Date.now(),
+            isActive: true,
+          };
+        }
+      );
+    }
 
   }, [navigation?.isActive, path, camera, controls, enabled, kioskId]);
 

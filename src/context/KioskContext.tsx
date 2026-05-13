@@ -143,7 +143,13 @@ export const KioskProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (error) {
       console.error('Error fetching offices:', error);
     } else if (data) {
-      setOffices(data);
+      // Filter out internal/hidden rooms like 'pr' in basement if requested
+      const filteredData = data.filter(office => {
+        const isPrInBasement = (office.floor_id === 'basement' || office.floor === 0) && 
+                               (office.name.toLowerCase() === 'pr' || office.name.toLowerCase() === 'power room');
+        return !isPrInBasement;
+      });
+      setOffices(filteredData);
     }
   }, []);
 

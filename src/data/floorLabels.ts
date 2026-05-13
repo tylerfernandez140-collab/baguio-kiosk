@@ -65,7 +65,6 @@ export const initialFloorLabels: Record<string, Record<string, string>> = {
     gso: "Persons with\nDisabilities Affairs Office",
     c_auditors_o: "City\nLegal Office",
     ba: "Brgy\nAffairs",
-    pr: "Power\nRoom",
     councilor: "Councilor",
     ofortod: "Office of the\nRegistry of Deeds",
     ceapmo: "City Environment and Park\nManagement Office",

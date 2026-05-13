@@ -195,6 +195,8 @@ function Model({
             mat.polygonOffset = true;
             mat.polygonOffsetFactor = -1;
             mat.polygonOffsetUnits = -2;
+          } else if (isPath) {
+            mat.color?.setHex(0xffffff); // Path = White
           } else if (isDisc) {
             mat.color?.setHex(0x004700); // Disc is Green
             mat.polygonOffset = true;
@@ -302,11 +304,14 @@ function Model({
             // Reset to original colors
             const isCube = name.includes('cube');
             const isStairs = name.includes('stairs');
+            const isPath = name.includes('path');
             const isDisc = name.includes('disc') || name.includes('disk');
             const isBase = ['ground', 'plane', 'base', 'floor'].some(ignored => name.includes(ignored));
             
             if (isCube) {
               mat.color.setHex(0x8B4513);
+            } else if (isPath) {
+              mat.color.setHex(0xffffff);
             } else if (isStairs) {
               mat.color.setHex(0x90EE90);
             } else if (isDisc) {
@@ -492,32 +497,32 @@ function AnimatedPath({ points }: { points: THREE.Vector3[] }) {
     <>
       <Line
         points={points}
-        color="#dc2626"
+        color="#2563eb"
         lineWidth={2}
         transparent
         opacity={0.2}
       />
       {arrows.map((arrow, i) => (
         <group key={`arrow-${i}`} position={arrow.position} rotation={[0, arrow.rotation.y, 0]}>
-          {/* Red arrow shaft - flat on ground pointing along Z */}
+          {/* Blue arrow shaft - flat on ground pointing along Z */}
           <mesh position={[0, 0.01, 0.15]} rotation={[0, 0, 0]}>
             <boxGeometry args={[0.12, 0.02, 0.3]} />
-            <meshBasicMaterial color="#dc2626" transparent opacity={0.95 * arrow.opacity} />
+            <meshBasicMaterial color="#2563eb" transparent opacity={0.95 * arrow.opacity} />
           </mesh>
-          {/* Red arrow head - flat on ground, touching the shaft, pointing forward */}
+          {/* Blue arrow head - flat on ground, touching the shaft, pointing forward */}
           <mesh position={[0, 0.01, 0.3]} rotation={[Math.PI / 2, 0, 0]}>
             <coneGeometry args={[0.15, 0.28, 3]} />
-            <meshBasicMaterial color="#dc2626" transparent opacity={0.95 * arrow.opacity} />
+            <meshBasicMaterial color="#2563eb" transparent opacity={0.95 * arrow.opacity} />
           </mesh>
           
-          {/* Darker red inner arrow */}
+          {/* Darker blue inner arrow */}
           <mesh position={[0, 0.012, 0.15]} rotation={[0, 0, 0]}>
             <boxGeometry args={[0.09, 0.02, 0.26]} />
-            <meshBasicMaterial color="#991b1b" transparent opacity={0.9 * arrow.opacity} />
+            <meshBasicMaterial color="#1e40af" transparent opacity={0.9 * arrow.opacity} />
           </mesh>
           <mesh position={[0, 0.012, 0.3]} rotation={[Math.PI / 2, 0, 0]}>
             <coneGeometry args={[0.11, 0.24, 3]} />
-            <meshBasicMaterial color="#991b1b" transparent opacity={0.9 * arrow.opacity} />
+            <meshBasicMaterial color="#1e40af" transparent opacity={0.9 * arrow.opacity} />
           </mesh>
         </group>
       ))}
@@ -656,7 +661,9 @@ export default function FloorBase({
         onLoadMarkers={setOfficeMarkers}
       />
       
-      {!hideLabels && officeMarkers.map((office, index) => (
+      {!hideLabels && officeMarkers
+        .filter(office => labels[office.name] || labels[office.name.toLowerCase()])
+        .map((office, index) => (
         <Html
           key={`${url}-label-${index}`}
           position={
