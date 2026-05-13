@@ -84,8 +84,10 @@ function Model({
   onSelectOffice,
   onLoadMarkers,
   selectedOfficeName,
+  labels,
 }: {
   url: string;
+  labels: Record<string, string>;
   offset?: [number, number, number];
   onSelectOffice?: (name: string | null, position: THREE.Vector3) => void;
   onLoadMarkers?: (
@@ -107,7 +109,11 @@ function Model({
     
     // Ignore base geometry
     const name = clickedObject.name.toLowerCase();
-    const isBase = ['ground', 'plane', 'stairs', 'cube', 'base', 'floor', 'outline', 'center'].some(ignored => name.includes(ignored));
+    const hasLabel = Object.keys(labels).some(key => 
+      key.toLowerCase().replace(/[^a-z0-9]/g, '') === name.replace(/[^a-z0-9]/g, '') ||
+      key.toLowerCase().replace(/[^a-z0-9]/g, '') === name.replace(/[^a-z0-9]/g, '').replace(/\d+$/, '')
+    );
+    const isBase = (['ground', 'plane', 'stairs', 'cube', 'base', 'floor', 'outline', 'center'].some(ignored => name.includes(ignored))) && !hasLabel;
     
     if (isBase) {
       onSelectOffice?.(null, new THREE.Vector3());
@@ -616,6 +622,7 @@ export default function FloorBase({
       <Model
         url={url}
         offset={offset}
+        labels={labels}
         selectedOfficeName={effectiveSelectedOfficeName}
         onSelectOffice={(name: string | null, position: THREE.Vector3) => {
         if (navigation?.isActive) {
@@ -638,7 +645,13 @@ export default function FloorBase({
       />
       
       {!hideLabels && officeMarkers
-        .filter(office => labels[office.name] || labels[office.name.toLowerCase()])
+        .filter(office => {
+          const name = office.name.toLowerCase();
+          return Object.keys(labels).some(key => 
+            key.toLowerCase().replace(/[^a-z0-9]/g, '') === name.replace(/[^a-z0-9]/g, '') ||
+            key.toLowerCase().replace(/[^a-z0-9]/g, '') === name.replace(/[^a-z0-9]/g, '').replace(/\d+$/, '')
+          );
+        })
         .map((office, index) => (
         <Html
           key={`${url}-label-${index}`}

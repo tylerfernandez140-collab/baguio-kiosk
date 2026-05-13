@@ -68,10 +68,8 @@ export const initialFloorLabels: Record<string, Record<string, string>> = {
     councilor: "Councilor",
     ofortod: "Office of the\nRegistry of Deeds",
     ceapmo: "City Environment and Park\nManagement Office",
-    stairs: "Stairs",
     daycare: "Daycare",
     sports: "Sports",
-    cube: "Cube",
   },
   first: {
     city_treasurers: "City Treasurer",

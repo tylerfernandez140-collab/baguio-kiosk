@@ -162,8 +162,8 @@ const firstFloorPaths: Record<string, THREE.Vector3[]> = {
     new THREE.Vector3(3.20, 0.001, 2.5), 
     new THREE.Vector3(3.20, 0.001, 0.96),
     new THREE.Vector3(2.90, 0.01, 0.96),
-    new THREE.Vector3(-5.75, 0.01, 0.96),
-    new THREE.Vector3(-5.75, 0.01, 0.74), 
+    new THREE.Vector3(-5.44, 0.01, 0.96),
+    new THREE.Vector3(-5.44, 0.01, 0.51), 
   ],
 
   stairs_basement: [
@@ -351,10 +351,13 @@ export default function FirstFloor({
         
         // Different stairs locations:
         // - UP to 2nd/3rd floor: main center stairs
-        // - DOWN to basement: basement stairwell entrance (black area on right side)
+        // - DOWN to basement: basement stairwell entrance
+        //   - For Daycare/Sports: use the left side stairs
+        const isDaycareOrSports = ['daycare', 'sports'].includes(navigation.officeId.toLowerCase());
+        
         const stairsPosition: [number, number, number] = isGoingUp 
           ? (kioskId === 'kiosk_2' ? [-5.98, 0.01, 0.38] : [3.8, 0.01, -0.1])
-          : [2.93, 0.5, 2.98];     // Exact position at basement stairwell entrance
+          : (isDaycareOrSports ? [-5.44, 0.01, 0.51] : [2.93, 0.5, 2.98]);
         
         return <YouAreHere label={label} position={stairsPosition} isStairs />;
       })()}

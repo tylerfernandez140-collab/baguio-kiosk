@@ -85,8 +85,10 @@ function Model({
   onSelectOffice,
   onLoadMarkers,
   selectedOfficeName,
+  labels,
 }: {
   url: string;
+  labels: Record<string, string>;
   offset?: [number, number, number];
   onSelectOffice?: (name: string | null, position: THREE.Vector3) => void;
   onLoadMarkers?: (
@@ -108,7 +110,11 @@ function Model({
     
     // Ignore base geometry
     const name = clickedObject.name.toLowerCase();
-    const isBase = ['ground', 'plane', 'stairs', 'cube', 'base', 'floor'].some(ignored => name.includes(ignored));
+    const hasLabel = Object.keys(labels).some(key => 
+      key.toLowerCase().replace(/[^a-z0-9]/g, '') === name.replace(/[^a-z0-9]/g, '') ||
+      key.toLowerCase().replace(/[^a-z0-9]/g, '') === name.replace(/[^a-z0-9]/g, '').replace(/\d+$/, '')
+    );
+    const isBase = (['ground', 'plane', 'stairs', 'cube', 'base', 'floor'].some(ignored => name.includes(ignored))) && !hasLabel;
     const isPath = name.includes('path');
     
     if (isBase || isPath) {
@@ -216,7 +222,11 @@ function Model({
       wrapper.traverse((child: THREE.Object3D) => {
         if (child instanceof THREE.Mesh) {
           const name = child.name.toLowerCase();
-          const isBase = ['ground', 'plane', 'stairs', 'cube', 'base', 'floor'].some(ignored => name.includes(ignored)) || name === 'plane001' || name === 'plane.001';
+          const hasLabel = Object.keys(labels).some(key => 
+            key.toLowerCase().replace(/[^a-z0-9]/g, '') === name.replace(/[^a-z0-9]/g, '') ||
+            key.toLowerCase().replace(/[^a-z0-9]/g, '') === name.replace(/[^a-z0-9]/g, '').replace(/\d+$/, '')
+          );
+          const isBase = (['ground', 'plane', 'stairs', 'cube', 'base', 'floor'].some(ignored => name.includes(ignored)) || name === 'plane001' || name === 'plane.001') && !hasLabel;
           const isPath = name.includes('path');
 
           if (!isBase && !isPath) {
@@ -639,6 +649,7 @@ export default function FloorBase({
       <Model
         url={url}
         offset={offset}
+        labels={labels}
         selectedOfficeName={effectiveSelectedOfficeName}
         onSelectOffice={(name: string | null, position: THREE.Vector3) => {
         if (navigation?.isActive) {
@@ -662,7 +673,13 @@ export default function FloorBase({
       />
       
       {!hideLabels && officeMarkers
-        .filter(office => labels[office.name] || labels[office.name.toLowerCase()])
+        .filter(office => {
+          const normalizedOffice = office.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+          return Object.keys(labels).some(key => 
+            key.toLowerCase().replace(/[^a-z0-9]/g, '') === normalizedOffice ||
+            key.toLowerCase().replace(/[^a-z0-9]/g, '') === normalizedOffice.replace(/\d+$/, '')
+          );
+        })
         .map((office, index) => (
         <Html
           key={`${url}-label-${index}`}
