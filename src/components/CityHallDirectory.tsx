@@ -616,6 +616,8 @@ interface NavigationCompletePopupProps {
   navigation: {
     isActive: boolean;
     isTransitioning: boolean;
+    officeId: string;
+    floorId: string;
     officeName: string;
     steps: { type: string; completed: boolean; floorId: string }[];
     currentStepIndex: number;
@@ -640,8 +642,17 @@ function NavigationCompletePopup({ navigation, onRepeat, onDone }: NavigationCom
     <div className="fixed top-[40px] left-[130px] z-[2147483647] pointer-events-none animate-fade-in" style={{ isolation: 'isolate' }}>
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-3 max-w-[240px] w-full text-center border-2 border-green-500 relative z-10 pointer-events-auto">
         {/* Success Icon */}
-        <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-1 font-bold text-green-600">
+        <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-2 font-bold text-green-600">
           <CheckCircle className="w-5 h-5" />
+        </div>
+
+        {/* Office Image */}
+        <div className="mb-3">
+          <OfficeDetailImage 
+            officeId={navigation.officeId} 
+            floorId={navigation.floorId} 
+            alt={navigation.officeName} 
+          />
         </div>
         
         {/* Title */}

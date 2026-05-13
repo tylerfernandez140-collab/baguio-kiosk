@@ -7,7 +7,7 @@ export interface KioskSettings {
 
 export const KIOSK_SETTINGS: Record<string, KioskSettings> = {
   kiosk_1: {
-    firstFloorPosition: [3.20, 0.01, 2.5],
+    firstFloorPosition: [3.50, 0.01, 2.2],
     showPaths: true,
   },
   kiosk_2: {
