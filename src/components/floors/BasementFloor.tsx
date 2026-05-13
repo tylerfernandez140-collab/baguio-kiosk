@@ -73,18 +73,18 @@ gso: [
     new THREE.Vector3(10.33, 0.01, 1.55),
 
   ],
-  daycare: [
-    new THREE.Vector3(-6.7, 0.01, 0.98),
-    new THREE.Vector3(-8.15, 0.01, 0.98),
-    new THREE.Vector3(-8.15, 0.01, 0.08),
-    new THREE.Vector3(-9.07, 0.01, 0.08),
-    new THREE.Vector3(-9.07, 0.01, -1.67),
-    new THREE.Vector3(-8.77, 0.01, -1.67),
+ daycare: [
+    new THREE.Vector3(-6.7, 0.01, -0.8),
+    new THREE.Vector3(-9.14, 0.01, -0.8),
+    new THREE.Vector3(-9.14, 0.01, -3.5),
+    new THREE.Vector3(-8.76, 0.01, -3.5),
+
   ],
   sports: [
-    new THREE.Vector3(-6.7, 0.01, 0.98),
-    new THREE.Vector3(-8.15, 0.01, 0.98),
-    new THREE.Vector3(-8.15, 0.01, -0.03),
+    new THREE.Vector3(-6.7, 0.01, -0.8),
+    new THREE.Vector3(-9.14, 0.01, -0.8),
+    new THREE.Vector3(-9.14, 0.01, -2.15),
+    new THREE.Vector3(-8.76, 0.01, -2.15),
   ],
   cube: [
     new THREE.Vector3(2.40, 0.01, 1.74),
@@ -152,17 +152,17 @@ const basementPathsKiosk2: Record<string, THREE.Vector3[]> = {
     new THREE.Vector3(10.33, 0.01, 1.55),
   ],
   daycare: [
-    new THREE.Vector3(-6.7, 0.01, 0.98),
-    new THREE.Vector3(-8.15, 0.01, 0.98),
-    new THREE.Vector3(-8.15, 0.01, 0.08),
-    new THREE.Vector3(-9.07, 0.01, 0.08),
-    new THREE.Vector3(-9.07, 0.01, -1.67),
-    new THREE.Vector3(-8.77, 0.01, -1.67),
+    new THREE.Vector3(-6.7, 0.01, -0.8),
+    new THREE.Vector3(-9.14, 0.01, -0.8),
+    new THREE.Vector3(-9.14, 0.01, -3.5),
+    new THREE.Vector3(-8.76, 0.01, -3.5),
+
   ],
   sports: [
-    new THREE.Vector3(-6.7, 0.01, 0.98),
-    new THREE.Vector3(-8.15, 0.01, 0.98),
-    new THREE.Vector3(-8.15, 0.01, -0.03),
+    new THREE.Vector3(-6.7, 0.01, -0.8),
+    new THREE.Vector3(-9.14, 0.01, -0.8),
+    new THREE.Vector3(-9.14, 0.01, -2.15),
+    new THREE.Vector3(-8.76, 0.01, -2.15),
   ],
   cube: [
     new THREE.Vector3(2.40, 0.01, 1.74),

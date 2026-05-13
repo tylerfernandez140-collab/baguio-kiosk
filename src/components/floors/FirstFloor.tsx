@@ -302,8 +302,8 @@ const firstFloorPathsKiosk2: Record<string, THREE.Vector3[]> = {
   // Alternate entrance path for Kiosk 2 to go to the basement
   stairs_basement_alt: [
     new THREE.Vector3(-5.98, 0.01, 0.78),
-    new THREE.Vector3(2.90, 0.01, 0.78),
-    new THREE.Vector3(2.90, 0.01, 0.5),
+    new THREE.Vector3(3.86, 0.01, 0.78),
+    new THREE.Vector3(3.86, 0.01, 3.1),
   ],
 
 };
