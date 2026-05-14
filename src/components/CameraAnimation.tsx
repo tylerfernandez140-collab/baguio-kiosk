@@ -251,7 +251,7 @@ export function CameraAnimation({
       walkingRef.current.isActive = false;
       
       // Mark step complete when path ends - overlay will auto-advance (supports multi-floor)
-      if (navigation?.isActive && !navigation.isTransitioning) {
+      if (navigation?.isActive) {
         completeCurrentStep();
       }
       

@@ -593,16 +593,9 @@ export default function FloorBase({
       } else {
         setActivePath(null);
       }
-    } else if (floorId === 'first') {
-      // If we are on first floor and target is elsewhere, show stairs
-      if (predefinedPaths['stairs']) {
-        setActivePath(predefinedPaths['stairs']);
-      } else {
-        setActivePath(null);
-      }
-    } else if (floorId === 'second' && navigation.floorId === 'third') {
-      // If we are on second floor and target is third floor, show stairs
-      if (navigation.officeId === 'city__human_resource__management') {
+    } else if (navigation.floorId !== floorId) {
+      // If we are on second floor and target is elsewhere, show stairs
+      if (navigation.floorId === 'third' && navigation.officeId === 'city__human_resource__management') {
           if (predefinedPaths['stairs_hr']) {
             setActivePath(predefinedPaths['stairs_hr']);
           } else if (predefinedPaths['stairs']) {

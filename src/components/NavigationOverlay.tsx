@@ -14,8 +14,8 @@ export function NavigationOverlay() {
     endFloorTransition,
   } = useKiosk();
   
-  const transitionLockRef = useRef(false);
   const lastStepIndexRef = useRef(navigation?.currentStepIndex || 0);
+  const transitionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isFirstRender = useRef(true);
 
   // Handle floor transitions automatically
@@ -42,29 +42,42 @@ export function NavigationOverlay() {
 
     // 3. Handle Auto-Floor Switch
     // We only auto-switch if the step index has just changed, or it's the very first render of navigation
+    // We also must switch if the current floor doesn't match and we are not locked (to catch missed transitions due to short animations)
     const stepChanged = lastStepIndexRef.current !== navigation.currentStepIndex;
+    const needsFloorSwitch = currentStep.floorId !== selectedFloor;
     
-    if ((stepChanged || isFirstRender.current) && currentStep.floorId !== selectedFloor && !navigation.isTransitioning && !transitionLockRef.current) {
-      console.log(`Auto-switching floor to match instruction: ${selectedFloor} -> ${currentStep.floorId}`);
-      transitionLockRef.current = true;
-      startFloorTransition();
+    if (needsFloorSwitch && !navigation.isTransitioning) {
+      if (transitionTimeoutRef.current) return;
       
-      setTimeout(() => {
-        setSelectedFloor(currentStep.floorId);
+      console.log(`Auto-switching floor to match instruction: ${selectedFloor} -> ${currentStep.floorId}`);
+      
+      // Wait 1.5s before starting the transition so the user can see they arrived at the stairs
+      transitionTimeoutRef.current = setTimeout(() => {
+        startFloorTransition();
         
+        // Fade out
         setTimeout(() => {
-          endFloorTransition();
-          // Reset locks
+          setSelectedFloor(currentStep.floorId);
+          
+          // Fade in
           setTimeout(() => {
-            transitionLockRef.current = false;
-          }, 800);
-        }, 1300);
-      }, 700);
+            endFloorTransition();
+            transitionTimeoutRef.current = null;
+          }, 1500);
+        }, 1000);
+      }, 1500);
     }
 
     lastStepIndexRef.current = navigation.currentStepIndex;
     isFirstRender.current = false;
-  }, [navigation?.currentStepIndex, navigation?.isActive, navigation?.steps, selectedFloor]);
+    
+    return () => {
+      if (transitionTimeoutRef.current && !navigation.isActive) {
+        clearTimeout(transitionTimeoutRef.current);
+        transitionTimeoutRef.current = null;
+      }
+    };
+  }, [navigation?.currentStepIndex, navigation?.isActive, navigation?.steps, navigation?.isTransitioning, selectedFloor]);
 
   if (!navigation?.isActive) return null;
 
