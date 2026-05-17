@@ -24,6 +24,7 @@ export interface NavigationState {
   currentStepIndex: number;
   isActive: boolean;
   isTransitioning: boolean;
+  transitionTargetFloor?: string;
 }
 
 interface CameraAnimationState {
@@ -52,12 +53,15 @@ interface KioskContextType {
   refreshOffices: () => Promise<void>;
   goToNextStep: () => void;
   completeCurrentStep: () => void;
-  startFloorTransition: () => void;
+  jumpToStep: (index: number) => void;
+  startFloorTransition: (targetFloor?: string) => void;
   endFloorTransition: () => void;
   cameraAnimation: CameraAnimationState;
   setCameraAnimation: (state: CameraAnimationState) => void;
   startCameraAnimation: (targetPos: { x: number; y: number; z: number }, lookAtPos: { x: number; y: number; z: number }) => void;
   stopCameraAnimation: () => void;
+  cameraAnimationEnabled: boolean;
+  setCameraAnimationEnabled: (enabled: boolean) => void;
 }
 
 const KioskContext = createContext<KioskContextType | null>(null);
@@ -129,6 +133,7 @@ export const KioskProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     lookAtPosition: null,
     progress: 0,
   });
+  const [cameraAnimationEnabled, setCameraAnimationEnabled] = useState(true);
   const [labels, setLabels] = useState(initialFloorLabels);
   const [offices, setOffices] = useState<any[]>([]);
 
@@ -424,10 +429,16 @@ export const KioskProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       // Calculate first target (usually the hallway or first waypoint)
       const firstStep = steps[0];
       if (firstStep) {
-        startCameraAnimation(
-          { x: startPos[0], y: startPos[1] + 2, z: startPos[2] },
-          { x: startPos[0], y: 0, z: startPos[2] - 2 }
-        );
+        // Only start the zoom-in animation if camera animation is enabled
+        setCameraAnimationEnabled(prev => {
+          if (prev) {
+            startCameraAnimation(
+              { x: startPos[0], y: startPos[1] + 2, z: startPos[2] },
+              { x: startPos[0], y: 0, z: startPos[2] - 2 }
+            );
+          }
+          return prev;
+        });
       }
     }, 100);
   };
@@ -459,12 +470,27 @@ export const KioskProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     });
   };
 
-  const startFloorTransition = () => {
-    setNavigation(prev => prev ? { ...prev, isTransitioning: true } : null);
+  const jumpToStep = (index: number) => {
+    setNavigation(prev => {
+      if (!prev) return null;
+      const newIndex = Math.max(0, Math.min(index, prev.steps.length - 1));
+      
+      // Un-complete this step and all subsequent steps so they don't auto-skip
+      const updatedSteps = prev.steps.map((step, i) => ({
+        ...step,
+        completed: i >= newIndex ? false : step.completed
+      }));
+      
+      return { ...prev, currentStepIndex: newIndex, steps: updatedSteps };
+    });
+  };
+
+  const startFloorTransition = (targetFloor?: string) => {
+    setNavigation(prev => prev ? { ...prev, isTransitioning: true, transitionTargetFloor: targetFloor } : null);
   };
 
   const endFloorTransition = () => {
-    setNavigation(prev => prev ? { ...prev, isTransitioning: false } : null);
+    setNavigation(prev => prev ? { ...prev, isTransitioning: false, transitionTargetFloor: undefined } : null);
   };
 
   const startCameraAnimation = (targetPos: { x: number; y: number; z: number }, lookAtPos: { x: number; y: number; z: number }) => {
@@ -490,8 +516,9 @@ export const KioskProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       language, setLanguage, theme, toggleTheme, resetIdleTimer, isIdle, kioskId,
       selectedFloor, setSelectedFloor, navigation, startNavigation, clearNavigation,
       labels, updateLabel, offices, refreshOffices: fetchOffices,
-      goToNextStep, completeCurrentStep, startFloorTransition, endFloorTransition,
-      cameraAnimation, setCameraAnimation, startCameraAnimation, stopCameraAnimation
+      goToNextStep, completeCurrentStep, jumpToStep, startFloorTransition, endFloorTransition,
+      cameraAnimation, setCameraAnimation, startCameraAnimation, stopCameraAnimation,
+      cameraAnimationEnabled, setCameraAnimationEnabled
     }}>
       {children}
     </KioskContext.Provider>

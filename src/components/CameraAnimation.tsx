@@ -19,7 +19,9 @@ export function CameraAnimation({
   enabled = true 
 }: CameraAnimationProps) {
   const { camera, controls } = useThree();
-  const { navigation, kioskId, completeCurrentStep } = useKiosk();
+  const { navigation, kioskId, completeCurrentStep, cameraAnimationEnabled } = useKiosk();
+  
+  const isAnimationEnabled = enabled && cameraAnimationEnabled;
   
   const [cameraMode, setCameraMode] = useState<CameraMode>('overview');
   
@@ -101,13 +103,43 @@ export function CameraAnimation({
   const lastPathRef = useRef<THREE.Vector3[] | null>(null);
   
   useEffect(() => {
-    if (!navigation?.isActive || !enabled || !path || path.length < 2) {
+    if (!navigation?.isActive || !isAnimationEnabled || !path || path.length < 2) {
       if (!navigation) {
         return;
       }
-      setCameraMode('overview');
-      animationRef.current = null;
-      walkingRef.current = null;
+      
+      if (isAnimationEnabled === false) {
+        let targetLook = DEFAULT_CAMERA_TARGET.clone();
+        if (path && path.length > 0) {
+          targetLook = new THREE.Vector3().lerpVectors(path[0], path[path.length - 1], 0.5);
+          targetLook.y = 0;
+        }
+
+        const topViewPos = new THREE.Vector3(0, 22, 10); // High top view
+        const currentPos = camera.position.clone();
+        const currentTarget = controls ? (controls as any).target.clone() : new THREE.Vector3(0, 0, 0);
+
+        // Only transition if we are significantly far from the desired overview
+        if (currentPos.distanceTo(topViewPos) > 0.5 || currentTarget.distanceTo(targetLook) > 0.5) {
+          startTransition(
+            currentPos,
+            currentTarget,
+            topViewPos,
+            targetLook,
+            1500,
+            () => {
+              setCameraMode('overview');
+              animationRef.current = null;
+              walkingRef.current = null;
+            }
+          );
+        } else {
+          setCameraMode('overview');
+          animationRef.current = null;
+          walkingRef.current = null;
+        }
+      }
+      
       lastPathRef.current = null;
       return;
     }
@@ -198,7 +230,7 @@ export function CameraAnimation({
       );
     }
 
-  }, [navigation?.isActive, path, camera, controls, enabled, kioskId]);
+  }, [navigation?.isActive, path, camera, controls, isAnimationEnabled, kioskId, cameraMode]);
 
   // Handle transition animations
   useFrame(() => {

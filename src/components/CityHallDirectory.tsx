@@ -2,7 +2,7 @@ import { useState, useRef, Suspense, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Stage, useGLTF, Html } from '@react-three/drei';
-import { Map, Building, Users, FileText, Calendar, Phone, Info, Home, AlertTriangle, Search, X, RotateCcw, CheckCircle } from 'lucide-react';
+import { Map, Building, Users, FileText, Calendar, Phone, Info, Home, AlertTriangle, Search, X, RotateCcw, CheckCircle, Video, VideoOff } from 'lucide-react';
 import { useKiosk } from '@/context/KioskContext';
 import { getOfficeImageFilename } from '@/data/floorLabels';
 import ErrorBoundary from './ErrorBoundary';
@@ -165,7 +165,7 @@ function OfficeDetailImage({ officeId, floorId, alt }: { officeId: string; floor
 }
 
 const CityHallDirectoryInternal = ({ onNavigate, selectedOffice: propSelectedOffice, setSelectedOffice: propSetSelectedOffice }: CityHallDirectoryProps) => {
-  const { language, theme, selectedFloor, setSelectedFloor, startNavigation, clearNavigation, navigation, labels } = useKiosk();
+  const { language, theme, selectedFloor, setSelectedFloor, startNavigation, clearNavigation, navigation, labels, cameraAnimationEnabled, setCameraAnimationEnabled } = useKiosk();
   const [selectedCategory, setSelectedCategory] = useState('maps');
   const [autoRotate, setAutoRotate] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -425,7 +425,18 @@ const CityHallDirectoryInternal = ({ onNavigate, selectedOffice: propSelectedOff
           
           
           {/* Search Bar / Modal in Upper Right */}
-          <div className="absolute top-8 right-8 z-50">
+          <div className="absolute top-8 right-8 z-50 flex items-start gap-4">
+            {/* Camera Toggle Button */}
+            <button
+              onClick={() => setCameraAnimationEnabled(!cameraAnimationEnabled)}
+              className={`bg-white/90 hover:bg-white dark:bg-gray-800/90 dark:hover:bg-gray-800 p-4 rounded-full shadow-lg transition-all transform hover:scale-110 ${
+                cameraAnimationEnabled ? 'text-green-600' : 'text-gray-400'
+              }`}
+              title={cameraAnimationEnabled ? "Disable Walking Animation" : "Enable Walking Animation"}
+            >
+              {cameraAnimationEnabled ? <Video className="w-6 h-6" /> : <VideoOff className="w-6 h-6" />}
+            </button>
+
             {!isSearchOpen ? (
               <button
                 onClick={() => setIsSearchOpen(true)}
@@ -523,7 +534,7 @@ const CityHallDirectoryInternal = ({ onNavigate, selectedOffice: propSelectedOff
       <FloorTransitionOverlay 
         isActive={!!navigation?.isTransitioning}
         fromFloor={selectedFloor}
-        toFloor={navigation?.floorId}
+        toFloor={navigation?.transitionTargetFloor || navigation?.floorId}
       />
 
       {/* Navigation Overlay - handles step progression */}
@@ -631,10 +642,10 @@ function NavigationCompletePopup({ navigation, onRepeat, onDone }: NavigationCom
   
   // Check if we've reached the final step (arrived), on the correct floor, and NOT transitioning
   const currentStep = navigation.steps[navigation.currentStepIndex];
-  const { selectedFloor } = useKiosk();
-  const hasArrived = currentStep?.type === 'arrived' && 
-                    currentStep.floorId === selectedFloor && 
-                    !navigation.isTransitioning;
+  const { selectedFloor, cameraAnimationEnabled } = useKiosk();
+  
+  const hasArrived = (!navigation.isTransitioning && selectedFloor === navigation.floorId) &&
+                     (currentStep?.type === 'arrived' || !cameraAnimationEnabled);
   
   if (!hasArrived) return null;
 

@@ -12,6 +12,8 @@ export function NavigationOverlay() {
     setSelectedFloor,
     startFloorTransition,
     endFloorTransition,
+    jumpToStep,
+    cameraAnimationEnabled,
   } = useKiosk();
   
   const lastStepIndexRef = useRef(navigation?.currentStepIndex || 0);
@@ -53,7 +55,7 @@ export function NavigationOverlay() {
       
       // Wait 1.5s before starting the transition so the user can see they arrived at the stairs
       transitionTimeoutRef.current = setTimeout(() => {
-        startFloorTransition();
+        startFloorTransition(currentStep.floorId);
         
         // Fade out
         setTimeout(() => {
@@ -71,13 +73,24 @@ export function NavigationOverlay() {
     lastStepIndexRef.current = navigation.currentStepIndex;
     isFirstRender.current = false;
     
+    // 4. Auto-advance for simple view (no camera animation)
+    let simpleViewTimer: NodeJS.Timeout | null = null;
+    if (!cameraAnimationEnabled && !navigation.isTransitioning && currentStep.type === 'walk' && !currentStep.completed) {
+      simpleViewTimer = setTimeout(() => {
+        completeCurrentStep();
+      }, 2000); // 2 seconds display time per floor
+    }
+
     return () => {
       if (transitionTimeoutRef.current && !navigation.isActive) {
         clearTimeout(transitionTimeoutRef.current);
         transitionTimeoutRef.current = null;
       }
+      if (simpleViewTimer) {
+        clearTimeout(simpleViewTimer);
+      }
     };
-  }, [navigation?.currentStepIndex, navigation?.isActive, navigation?.steps, navigation?.isTransitioning, selectedFloor]);
+  }, [navigation?.currentStepIndex, navigation?.isActive, navigation?.steps, navigation?.isTransitioning, selectedFloor, cameraAnimationEnabled]);
 
   if (!navigation?.isActive) return null;
 
@@ -90,13 +103,41 @@ export function NavigationOverlay() {
 
   const handleNext = () => {
     if (currentFloorIndex < involvedFloors.length - 1) {
-      setSelectedFloor(involvedFloors[currentFloorIndex + 1]);
+      const nextFloor = involvedFloors[currentFloorIndex + 1];
+      startFloorTransition(nextFloor);
+      setTimeout(() => {
+        setSelectedFloor(nextFloor);
+        
+        // Find the walk step for this floor and jump to it
+        const nextStepIndex = navigation.steps.findIndex(s => s.floorId === nextFloor && (s.type === 'walk' || s.type === 'arrived'));
+        if (nextStepIndex !== -1) {
+          jumpToStep(nextStepIndex);
+        }
+
+        setTimeout(() => {
+          endFloorTransition();
+        }, 1500);
+      }, 1000);
     }
   };
 
   const handlePrev = () => {
     if (currentFloorIndex > 0) {
-      setSelectedFloor(involvedFloors[currentFloorIndex - 1]);
+      const prevFloor = involvedFloors[currentFloorIndex - 1];
+      startFloorTransition(prevFloor);
+      setTimeout(() => {
+        setSelectedFloor(prevFloor);
+        
+        // Find the walk step for this floor and jump to it
+        const prevStepIndex = navigation.steps.findIndex(s => s.floorId === prevFloor && s.type === 'walk');
+        if (prevStepIndex !== -1) {
+          jumpToStep(prevStepIndex);
+        }
+
+        setTimeout(() => {
+          endFloorTransition();
+        }, 1500);
+      }, 1000);
     }
   };
 
